@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Osgu Campus Confession</title>
-    <link rel="manifest" id="pwaManifest">
+    <!-- REAL PWA MANIFEST LINK -->
+    <link rel="manifest" href="manifest.json">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -87,13 +88,16 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* Restored Smooth Card Scroll Animation */
-        .card-reveal-wrapper {
-            opacity: 0; transform: translateY(25px);
-            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: transform, opacity; margin-bottom: 24px;
+        /* 100% WORKING PURE CSS ANIMATION */
+        @keyframes slideUpFade {
+            0% { opacity: 0; transform: translateY(30px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
-        .card-reveal-wrapper.show { opacity: 1; transform: translateY(0); }
+        .card-reveal-wrapper {
+            opacity: 0; /* Starts hidden, animation will show it */
+            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            margin-bottom: 24px;
+        }
 
         .card { 
             background-color: var(--card-bg); border: 1px solid var(--border-color); 
@@ -390,19 +394,6 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
-        // PWA Data URI Manifest
-        const manifestData = {
-            "name": "Osgu Campus Confession",
-            "short_name": "OSGU Confess",
-            "start_url": "./",
-            "display": "standalone",
-            "background_color": "#09090b",
-            "theme_color": "#8b5cf6",
-            "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3209/3209265.png", "sizes": "512x512", "type": "image/png" }]
-        };
-        const stringManifest = JSON.stringify(manifestData);
-        document.getElementById('pwaManifest').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(stringManifest);
-
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
             authDomain: "unfiltered-campus.firebaseapp.com",
@@ -470,7 +461,6 @@
             window.createNotification("Theme updated successfully!", "fa-palette");
         };
 
-        // FCM Notifications
         window.requestNotificationPermission = async function() {
             triggerHaptic(30);
             try {
@@ -520,17 +510,6 @@
             }
             return null;
         }
-
-        // Restored fully functioning Card Observer with scroll reveal & hide animation toggle
-        window.cardObserver = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) { 
-                    entry.target.classList.add('show'); 
-                } else { 
-                    entry.target.classList.remove('show'); 
-                }
-            });
-        }, { root: null, rootMargin: '0px 0px -30px 0px', threshold: 0.05 });
 
         onAuthStateChanged(auth, (user) => {
             window.currentUser = user;
@@ -909,9 +888,6 @@
                     }
                 }
             });
-
-            const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
-            wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
         function updatePostCardDOM(postId) {
