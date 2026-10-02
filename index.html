@@ -95,6 +95,20 @@
             border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
         }
         
+        /* Skeleton Loaders */
+        @keyframes shimmer {
+            0% { background-position: -200px 0; }
+            100% { background-position: calc(200px + 100%) 0; }
+        }
+        .skeleton-card {
+            background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
+            background-size: 400px 100%;
+            animation: shimmer 1.5s infinite;
+            height: 180px;
+            border-radius: 16px;
+            margin-bottom: 24px;
+        }
+
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .user-block { display: flex; align-items: center; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); overflow: hidden; }
@@ -117,6 +131,26 @@
         .feed-stats div { cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
         .feed-stats i { margin-right: 5px; }
         
+        /* Upvote / Vote Bounce Animation */
+        .bounce-anim {
+            animation: bounceEffect 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes bounceEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        /* Emoji Reaction Pop Animation */
+        .pop-anim {
+            animation: popEffect 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes popEffect {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.25); }
+            100% { transform: scale(1); }
+        }
+
         .reaction-bar { display: flex; gap: 10px; }
         .reaction-pill { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
         .reaction-pill:hover { border-color: var(--primary); color: white; }
@@ -124,7 +158,24 @@
 
         .share-btn:hover { color: var(--whatsapp); }
         
-        .comments-section { display: none; border-top: 1px solid var(--border-color); margin-top: 12px; padding-top: 12px; }
+        /* Smooth Comment Accordion Slide */
+        .comments-section {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, padding 0.3s ease, margin 0.3s ease;
+            opacity: 0;
+            border-top: none;
+            padding-top: 0;
+            margin-top: 0;
+        }
+        .comments-section.show-comments {
+            max-height: 600px;
+            opacity: 1;
+            border-top: 1px solid var(--border-color);
+            margin-top: 12px;
+            padding-top: 12px;
+        }
+
         .comment-input-area { display: flex; gap: 8px; margin-bottom: 12px; }
         .comment-input-area input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 9999px; font-size: 0.9rem; outline: none; }
         .comment-btn { background-color: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
@@ -310,9 +361,14 @@
             <button class="filter-btn active" id="latestBtn" onclick="window.sortFeed('latest')">Latest</button>
             <button class="filter-btn" id="trendingBtn" onclick="window.sortFeed('trending')">Trending 🔥</button>
         </div>
+        
         <div id="feed">
-            <div style="text-align:center; padding: 20px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Loading confessions from database...</div>
+            <!-- Skeleton Loaders Initial State -->
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
         </div>
+
         <div id="loadingMoreIndicator" style="text-align: center; padding: 20px; color: var(--text-muted); display: none;">
             <i class="fa-solid fa-spinner fa-spin"></i> Loading more confessions...
         </div>
@@ -331,7 +387,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-        // Embed PWA Manifest Dynamically
         const manifestData = {
             "name": "Osgu Campus Confession",
             "short_name": "OSGU Confess",
@@ -375,7 +430,6 @@
         const ADMIN_EMAIL = "klak50506@gmail.com";
         const BAD_WORDS = ["gali1", "gali2"]; 
 
-        // Subtle Haptic Feedback Helper
         function triggerHaptic(ms = 30) {
             if ("vibrate" in navigator) {
                 try { navigator.vibrate(ms); } catch (e) {}
@@ -430,7 +484,6 @@
             window.currentUser = user;
         });
 
-        // Feed Listener with Global Single-Field Trending Query (No Composite Index Error)
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -692,24 +745,25 @@
                             ${imageHTML}
                             <p class="feed-text raw-text">${data.text}</p>
                             
-                            <!-- Reaction Bar -->
+                            <!-- Reaction Bar with Pop Animation -->
                             <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                                <div class="reaction-pill ${userReacted[currentUid] === 'lol' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'lol')">😂 <span>${reactions.lol || 0}</span></div>
-                                <div class="reaction-pill ${userReacted[currentUid] === 'relatable' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'relatable')">💀 <span>${reactions.relatable || 0}</span></div>
-                                <div class="reaction-pill ${userReacted[currentUid] === 'tea' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'tea')">☕ <span>${reactions.tea || 0}</span></div>
-                                <div class="reaction-pill ${userReacted[currentUid] === 'wholesome' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'wholesome')">❤ <span>${reactions.wholesome || 0}</span></div>
+                                <div id="react-${data.id}-lol" class="reaction-pill ${userReacted[currentUid] === 'lol' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'lol')">😂 <span>${reactions.lol || 0}</span></div>
+                                <div id="react-${data.id}-relatable" class="reaction-pill ${userReacted[currentUid] === 'relatable' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'relatable')">💀 <span>${reactions.relatable || 0}</span></div>
+                                <div id="react-${data.id}-tea" class="reaction-pill ${userReacted[currentUid] === 'tea' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'tea')">☕ <span>${reactions.tea || 0}</span></div>
+                                <div id="react-${data.id}-wholesome" class="reaction-pill ${userReacted[currentUid] === 'wholesome' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'wholesome')">❤ <span>${reactions.wholesome || 0}</span></div>
                             </div>
 
                             <div class="feed-stats">
                                 <div class="main-stats">
                                     <div class="stat-group">
-                                        <div onclick="window.vote('${data.id}', 1)" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span>${data.upvotes}</span></div>
-                                        <div onclick="window.vote('${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
+                                        <div id="upvote-btn-${data.id}" onclick="window.vote(event, '${data.id}', 1)" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span>${data.upvotes}</span></div>
+                                        <div id="downvote-btn-${data.id}" onclick="window.vote(event, '${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
                                         <div onclick="window.toggleComments('${data.id}')"><i class="fa-regular fa-comment"></i> <span>${data.comments ? data.comments.length : 0}</span></div>
                                     </div>
                                     <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
                                 </div>
                             </div>
+                            <!-- Smooth Comment Accordion Section -->
                             <div class="comments-section" id="comments-${data.id}">
                                 <div class="comment-input-area">
                                     <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
@@ -726,8 +780,18 @@
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
-        window.vote = async function(postId, voteType) {
+        // Upvote / Vote Bounce Effect Implementation
+        window.vote = async function(event, postId, voteType) {
             triggerHaptic(25);
+            
+            // Add bounce animation class
+            const btnId = voteType === 1 ? `upvote-btn-${postId}` : `downvote-btn-${postId}`;
+            const btnEl = document.getElementById(btnId);
+            if (btnEl) {
+                btnEl.classList.add('bounce-anim');
+                setTimeout(() => btnEl.classList.remove('bounce-anim'), 300);
+            }
+
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
             const postRef = doc(db, "confessions", postId);
@@ -753,8 +817,17 @@
             }
         };
 
+        // Emoji Reaction Pop Animation Implementation
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
+
+            // Add pop animation class
+            const pillEl = document.getElementById(`react-${postId}-${reactionType}`);
+            if (pillEl) {
+                pillEl.classList.add('pop-anim');
+                setTimeout(() => pillEl.classList.remove('pop-anim'), 300);
+            }
+
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
             const postRef = doc(db, "confessions", postId);
@@ -883,7 +956,6 @@
             text = filterProfanity(text);
             const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
-            // FIXED: Using window.currentUser.photoURL instead of userPhoto
             const commentData = { 
                 text: formattedCommentText, 
                 uid: window.currentUser.uid, 
@@ -931,10 +1003,16 @@
             else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } 
         };
         window.createNotification = function(message, iconName) { const list = document.getElementById('notifList'); const emptyMsg = document.getElementById('emptyNotif'); const badge = document.getElementById('notifBadge'); if (emptyMsg) emptyMsg.remove(); list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`); unreadNotifications++; badge.innerText = unreadNotifications; badge.style.display = 'flex'; };
+        
+        // Smooth Comment Accordion Toggle
         window.toggleComments = function(postId) { 
             triggerHaptic(15);
             const section = document.getElementById('comments-' + postId); 
-            section.style.display = section.style.display === 'block' ? 'none' : 'block'; 
+            if (section.classList.contains('show-comments')) {
+                section.classList.remove('show-comments');
+            } else {
+                section.classList.add('show-comments');
+            }
         };
         
         window.shareToWhatsApp = function(encodedText) { 
