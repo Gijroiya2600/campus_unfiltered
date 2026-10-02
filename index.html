@@ -270,7 +270,7 @@
     <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, getDocs, startAfter } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -295,9 +295,9 @@
         let postToReport = null;
         window.currentImageBase64 = null;
         
-        // Pagination State Variables
-        const PAGE_SIZE = 10;
-        let lastVisibleDoc = null;
+        // Pagination & Realtime Sync State Variables
+        let currentLimit = 10;
+        let unsubscribeFeed = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
         
@@ -332,90 +332,61 @@
             }
         });
 
-        // Initial Feed Load with Pagination
-        window.loadInitialPosts = async function() {
-            const feed = document.getElementById('feed');
-            feed.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Loading confessions...</div>';
-            
-            try {
-                const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(PAGE_SIZE));
-                const snapshot = await getDocs(q);
-                
-                window.allPosts = [];
-                if (snapshot.empty) {
-                    feed.innerHTML = '<div style="text-align:center; padding: 20px; color: #9ca3af;">Be the first to confess something!</div>';
-                    hasMorePosts = false;
-                    return;
-                }
+        // Setup Realtime Feed with Incremental Limit (Solves Real-time + Infinite Scroll problem)
+        window.setupFeedListener = function() {
+            if (unsubscribeFeed) unsubscribeFeed();
 
-                lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+            let q;
+            if (window.currentSort === 'trending') {
+                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), orderBy("timestamp", "desc"), limit(currentLimit));
+            } else {
+                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(currentLimit));
+            }
+
+            unsubscribeFeed = onSnapshot(q, (snapshot) => {
+                window.allPosts = [];
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     data.id = docSnap.id;
                     window.allPosts.push(data);
                 });
 
-                if (snapshot.docs.length < PAGE_SIZE) {
+                const indicator = document.getElementById('loadingMoreIndicator');
+                if (snapshot.docs.length < currentLimit) {
                     hasMorePosts = false;
+                    if (indicator) indicator.style.display = 'none';
                 } else {
                     hasMorePosts = true;
                 }
 
                 window.renderFeed();
-            } catch (e) {
-                feed.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--downvote);">Error loading confessions. Please refresh.</div>';
-            }
+            }, (error) => {
+                console.error("Firestore snapshot error:", error);
+                const feed = document.getElementById('feed');
+                if (feed) feed.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--downvote);">Error loading feed. Please refresh.</div>';
+            });
         };
 
-        // Load More Posts (Infinite Scroll Handler)
-        window.loadMorePosts = async function() {
-            if (isLoadingMore || !hasMorePosts || window.currentSort === 'trending') return;
-            
+        // Infinite Scroll Handler
+        window.loadMorePosts = function() {
+            if (isLoadingMore || !hasMorePosts) return;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; // Disable infinite scroll during active search
+            if (searchQuery) return; // Disable during active search filter
 
             isLoadingMore = true;
-            document.getElementById('loadingMoreIndicator').style.display = 'block';
+            const indicator = document.getElementById('loadingMoreIndicator');
+            if (indicator) indicator.style.display = 'block';
 
-            try {
-                const q = query(
-                    collection(db, "confessions"), 
-                    orderBy("timestamp", "desc"), 
-                    startAfter(lastVisibleDoc), 
-                    limit(PAGE_SIZE)
-                );
-                const snapshot = await getDocs(q);
+            currentLimit += 10; // Expand limit to pull next batch in real-time listener
+            window.setupFeedListener();
 
-                if (snapshot.empty) {
-                    hasMorePosts = false;
-                    document.getElementById('loadingMoreIndicator').style.display = 'none';
-                    isLoadingMore = false;
-                    return;
-                }
-
-                lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    data.id = docSnap.id;
-                    if (!window.allPosts.some(p => p.id === data.id)) {
-                        window.allPosts.push(data);
-                    }
-                });
-
-                if (snapshot.docs.length < PAGE_SIZE) {
-                    hasMorePosts = false;
-                }
-
-                window.renderFeed();
-            } catch (e) {
-                console.error("Error loading more posts:", e);
-            }
-
-            document.getElementById('loadingMoreIndicator').style.display = 'none';
-            isLoadingMore = false;
+            setTimeout(() => {
+                isLoadingMore = false;
+                if (indicator) indicator.style.display = 'none';
+            }, 600);
         };
 
-        // Scroll Event Listener for Infinite Scrolling
+        // Scroll Event Listener
         window.addEventListener('scroll', () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
                 window.loadMorePosts();
@@ -436,7 +407,7 @@
             if (confirm("Do you want to logout?")) {
                 await signOut(auth);
                 window.closeProfileModal();
-                window.createNotification("Logged successfully", "fa-right-from-bracket");
+                window.createNotification("Logged out successfully", "fa-right-from-bracket");
             }
         };
 
@@ -530,7 +501,6 @@
             if (confirm("Are you sure you want to permanently delete this post?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
-                    window.allPosts = window.allPosts.filter(p => p.id !== postId);
                     window.createNotification("Post deleted permanently by admin.", "fa-trash");
                     window.openAdminModal(); 
                 } catch (e) {
@@ -546,11 +516,6 @@
                     reports: [],
                     isFlagged: false
                 });
-                const post = window.allPosts.find(p => p.id === postId);
-                if (post) {
-                    post.reports = [];
-                    post.isFlagged = false;
-                }
                 window.createNotification("Report dismissed. Post restored to feed.", "fa-circle-check");
                 window.openAdminModal(); 
             } catch (e) {
@@ -565,8 +530,6 @@
             let displayPosts = [...window.allPosts];
             
             let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
-            
-            if (window.currentSort === 'trending') displayPosts.sort((a, b) => b.upvotes - a.upvotes); 
 
             if (displayPosts.length === 0) {
                 feed.innerHTML = '<div style="text-align:center; padding: 20px; color: #9ca3af;">Be the first to confess something!</div>';
@@ -698,7 +661,6 @@
             if(confirm("Are you sure you want to delete this confession?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
-                    window.allPosts = window.allPosts.filter(p => p.id !== postId);
                     window.createNotification("Post deleted successfully!", "fa-trash");
                     window.closeProfileModal();
                     let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
@@ -771,7 +733,7 @@
                     timestamp: Date.now(), uid: window.currentUser.uid, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
-                input.value = ""; window.removeImage(); window.closeModal(); window.loadInitialPosts(); window.createNotification("Confession posted live!", "fa-check");
+                input.value = ""; window.removeImage(); window.closeModal(); window.createNotification("Confession posted live!", "fa-check");
             } catch (e) { alert("Error posting."); }
             btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>'; btn.disabled = false;
         };
@@ -787,7 +749,16 @@
             catch (error) { alert("Failed to post comment."); }
         };
 
-        window.sortFeed = function(type) { document.getElementById('latestBtn').classList.remove('active'); document.getElementById('trendingBtn').classList.remove('active'); document.getElementById(type + 'Btn').classList.add('active'); window.currentSort = type; window.renderFeed(); };
+        window.sortFeed = function(type) { 
+            document.getElementById('latestBtn').classList.remove('active'); 
+            document.getElementById('trendingBtn').classList.remove('active'); 
+            document.getElementById(type + 'Btn').classList.add('active'); 
+            window.currentSort = type; 
+            currentLimit = 10; // Reset pagination limit on tab change
+            hasMorePosts = true;
+            window.setupFeedListener(); 
+        };
+
         window.searchHashtag = function(tag) { document.getElementById('searchContainer').style.display = 'block'; document.getElementById('searchInput').value = tag; window.scrollToTop(); window.searchPosts(); };
         window.toggleSearch = function() { const searchContainer = document.getElementById('searchContainer'); if (searchContainer.style.display === 'block') { searchContainer.style.display = 'none'; document.getElementById('searchInput').value = ''; window.searchPosts(); } else { searchContainer.style.display = 'block'; document.getElementById('searchInput').focus(); window.scrollToTop(); } };
         window.searchPosts = function() { window.renderFeed(); };
@@ -905,8 +876,8 @@
             }
         });
 
-        // Trigger initial data load on page ready
-        window.loadInitialPosts();
+        // Initial Realtime Feed Load
+        window.setupFeedListener();
 
     </script>
 </body>
