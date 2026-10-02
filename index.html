@@ -503,9 +503,11 @@
                 q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(PAGE_SIZE));
             }
 
+            let isInitialLoad = true;
+
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
                 let fetchedPosts = [];
-                snapshot.forEach((docSnap) => {
+                snapshot.docs.forEach((docSnap) => {
                     const data = docSnap.data();
                     data.id = docSnap.id;
                     fetchedPosts.push(data);
@@ -517,7 +519,6 @@
                     lastVisibleDoc = null;
                 }
 
-                // Deduplicate and merge cleanly
                 const map = new Map();
                 window.allPosts.forEach(p => map.set(p.id, p));
                 fetchedPosts.forEach(p => map.set(p.id, p));
@@ -529,7 +530,13 @@
                     window.allPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 }
 
-                window.renderFeed();
+                // Prevent full re-render flickering on background sync/votes/comments
+                if (isInitialLoad || fetchedPosts.length !== window.allPosts.length) {
+                    window.renderFeed();
+                    isInitialLoad = false;
+                } else {
+                    window.allPosts.forEach(post => updatePostCardDOM(post.id));
+                }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
                 if (snapshot.docs.length < PAGE_SIZE) {
@@ -724,7 +731,6 @@
         };
 
         window.renderFeed = function() {
-            // Preserve open comments and draft inputs across re-renders
             const openCommentsState = {};
             document.querySelectorAll('.comments-section.show-comments').forEach(el => {
                 const postId = el.id.replace('comments-', '');
@@ -851,7 +857,6 @@
                 `);
             });
 
-            // Restore open comment sections and input text
             Object.keys(openCommentsState).forEach(id => {
                 const section = document.getElementById('comments-' + id);
                 if (section) {
