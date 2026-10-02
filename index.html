@@ -294,7 +294,7 @@
         
         const ADMIN_EMAIL = "klak50506@gmail.com";
 
-        // HTML Escape Helper to prevent XSS vulnerability in user names
+        // HTML Escape Helper to prevent XSS vulnerability
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -519,7 +519,7 @@
                                     <div class="comment-meta">
                                         ${cAvatar} <span style="color: var(--primary);">${cName}</span>
                                     </div>
-                                    <div style="margin-top: 4px;">${c.text}</div>
+                                    <div style="margin-top: 4px;">${escapeHtml(c.text)}</div>
                                 </div>
                             `;
                         }
@@ -684,6 +684,7 @@
             try {
                 const docRef = await addDoc(collection(db, "confessions"), {
                     text: formattedText, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
+                    reports: [], isFlagged: false,
                     timestamp: Date.now(), uid: window.currentUser.uid, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
@@ -745,6 +746,16 @@
                 }
                 try {
                     const postRef = doc(db, "confessions", postToReport);
+                    const post = window.allPosts.find(p => p.id === postToReport);
+                    
+                    // Check if user already reported this post to prevent duplicate bloat
+                    const existingReports = post && post.reports ? post.reports : [];
+                    if (existingReports.some(r => r.uid === window.currentUser.uid)) {
+                        window.createNotification("You have already reported this post.", "fa-circle-exclamation");
+                        window.closeReportModal();
+                        return;
+                    }
+
                     await updateDoc(postRef, {
                         reports: arrayUnion({
                             uid: window.currentUser.uid,
