@@ -463,7 +463,6 @@
             }
         };
 
-        // Increased limit to 100 so Trending has a robust pool of recent posts
         const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(100));
         
         onSnapshot(q, (snapshot) => {
@@ -634,7 +633,6 @@
                 window.initialPinchDistance = Math.hypot(dx, dy);
             }
         };
-        // Fixed touch warning by checking e.cancelable before preventDefault
         window.movePinch = function(e, img) {
             if (e.touches.length === 2 && window.initialPinchDistance) {
                 if (e.cancelable) e.preventDefault(); 
@@ -682,7 +680,6 @@
             let text = input.value;
             if (text.trim() === "" && !window.currentImageBase64) return;
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...'; btn.disabled = true;
-            // Hashtag regex updated to support underscores (_)
             const formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
             try {
                 const docRef = await addDoc(collection(db, "confessions"), {
@@ -759,7 +756,7 @@
                     });
                     window.createNotification("Report submitted & sent to admin.", "fa-shield-halved");
                 } catch (error) {
-                    alert("Failed to submit report.");
+                    alert("Failed to report: " + error.message);
                 }
             }
             window.closeReportModal(); 
