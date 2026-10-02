@@ -376,7 +376,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const manifestData = {
@@ -414,10 +414,11 @@
         let postToReport = null;
         window.currentImageBase64 = null;
         
-        let currentLimit = 10;
+        let lastVisibleDoc = null;
         let unsubscribeFeed = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
+        const PAGE_SIZE = 10;
         
         const ADMIN_EMAIL = "klak50506@gmail.com";
         const BAD_WORDS = ["gali1", "gali2"]; 
@@ -472,7 +473,6 @@
             return cleanText;
         }
 
-        // --- FIXED: Hardened Anti-Doxxing filter that strips whitespace & punctuation ---
         function checkDoxxing(text) {
             const stripped = text.replace(/[\s\-\(\)\+]/g, '');
             const phoneRegex = /(\b\d{10}\b)|([6-9]\d{9})/;
@@ -498,9 +498,9 @@
 
             let q;
             if (window.currentSort === 'trending') {
-                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(currentLimit));
+                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(PAGE_SIZE));
             } else {
-                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(currentLimit));
+                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(PAGE_SIZE));
             }
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
@@ -510,6 +510,12 @@
                     data.id = docSnap.id;
                     newPosts.push(data);
                 });
+
+                if (snapshot.docs.length > 0) {
+                    lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+                } else {
+                    lastVisibleDoc = null;
+                }
 
                 const oldIds = window.allPosts.map(p => p.id).join(',');
                 const newIds = newPosts.map(p => p.id).join(',');
@@ -523,7 +529,7 @@
                 }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
-                if (snapshot.docs.length < currentLimit) {
+                if (snapshot.docs.length < PAGE_SIZE) {
                     hasMorePosts = false;
                     if (indicator) indicator.style.display = 'none';
                 } else { hasMorePosts = true; }
@@ -533,8 +539,9 @@
             });
         };
 
-        window.loadMorePosts = function() {
-            if (isLoadingMore || !hasMorePosts) return;
+        // --- UPGRADED: Cursor-based pagination using startAfter ---
+        window.loadMorePosts = async function() {
+            if (isLoadingMore || !hasMorePosts || !lastVisibleDoc) return;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             if (searchQuery) return; 
 
@@ -542,13 +549,44 @@
             const indicator = document.getElementById('loadingMoreIndicator');
             if (indicator) indicator.style.display = 'block';
 
-            currentLimit += 10; 
-            window.setupFeedListener();
+            try {
+                let q;
+                if (window.currentSort === 'trending') {
+                    q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), startAfter(lastVisibleDoc), limit(PAGE_SIZE));
+                } else {
+                    q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), startAfter(lastVisibleDoc), limit(PAGE_SIZE));
+                }
 
-            setTimeout(() => {
+                const snapshot = await getDocs(q);
+                let fetchedPosts = [];
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    data.id = docSnap.id;
+                    fetchedPosts.push(data);
+                });
+
+                if (snapshot.docs.length > 0) {
+                    lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+                } else {
+                    hasMorePosts = false;
+                    if (indicator) indicator.style.display = 'none';
+                }
+
+                if (fetchedPosts.length > 0) {
+                    window.allPosts = [...window.allPosts, ...fetchedPosts];
+                    window.renderFeed();
+                }
+
+                if (snapshot.docs.length < PAGE_SIZE) {
+                    hasMorePosts = false;
+                    if (indicator) indicator.style.display = 'none';
+                }
+            } catch (e) {
+                console.error("Error loading more posts:", e);
+            } finally {
                 isLoadingMore = false;
-                if (indicator) indicator.style.display = 'none';
-            }, 600);
+                if (indicator && hasMorePosts) indicator.style.display = 'none';
+            }
         };
 
         window.addEventListener('scroll', () => {
@@ -750,8 +788,8 @@
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
                 const postAdminBadge = (data.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
 
-                // --- FIXED: Dynamically escape text and parse hashtags on render (preventing stored XSS) ---
-                const safeParsedText = escapeHtml(data.text).replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
+                // --- UPGRADED: Safe data-tag attribute parsing for hashtags ---
+                const safeParsedText = escapeHtml(data.text).replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' data-tag='$2' onclick='window.searchHashtag(this.dataset.tag)'>$2</span>");
 
                 feed.insertAdjacentHTML('beforeend', `
                     <div class="card-reveal-wrapper">
@@ -1015,7 +1053,6 @@
             document.getElementById('mediaUpload').value = ""; 
         };
 
-        // --- FIXED: Storing clean plain text in DB instead of pre-rendered HTML ---
         window.postConfession = async function() {
             triggerHaptic(30);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
@@ -1077,7 +1114,6 @@
             document.getElementById('trendingBtn').classList.remove('active'); 
             document.getElementById(type + 'Btn').classList.add('active'); 
             window.currentSort = type; 
-            currentLimit = 10; 
             hasMorePosts = true;
             window.setupFeedListener(); 
         };
