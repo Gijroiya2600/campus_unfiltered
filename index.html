@@ -132,7 +132,7 @@
         .feed-stats div:active { transform: scale(0.85); }
         .feed-stats i { margin-right: 5px; }
         
-        /* Neon Crown Glow Animation */
+        /* Royal Neon Crown Glow Animation */
         .neon-crown {
             width: 20px;
             height: 16px;
@@ -504,6 +504,7 @@
             window.currentUser = user;
         });
 
+        // Optimized Feed Listener to prevent unnecessary constant reloading
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -515,12 +516,18 @@
             }
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
-                window.allPosts = [];
+                let newPosts = [];
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     data.id = docSnap.id;
-                    window.allPosts.push(data);
+                    newPosts.push(data);
                 });
+
+                // Render only if data actually changed to prevent jitter/refresh loop
+                if (JSON.stringify(newPosts) !== JSON.stringify(window.allPosts)) {
+                    window.allPosts = newPosts;
+                    window.renderFeed();
+                }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
                 if (snapshot.docs.length < currentLimit) {
@@ -528,7 +535,6 @@
                     if (indicator) indicator.style.display = 'none';
                 } else { hasMorePosts = true; }
 
-                window.renderFeed();
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
             });
