@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Campus Unfiltered</title>
+    <!-- NAYA: Browser Tab ka naam change kiya -->
+    <title>Osgu Campus Confession</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -102,7 +103,8 @@
 
     <header>
         <div style="max-width: 600px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-            <h1><i class="fa-solid fa-mask" style="color: var(--primary); margin-right: 10px;"></i> Campus Unfiltered</h1>
+            <!-- NAYA: Main Header naam change kiya -->
+            <h1><i class="fa-solid fa-mask" style="color: var(--primary); margin-right: 10px;"></i> Osgu Campus Confession</h1>
             <div class="header-icons">
                 <div class="bell-wrapper" onclick="window.toggleNotifications()">
                     <i class="fa-solid fa-bell bell-icon"></i>
@@ -184,7 +186,6 @@
     <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        // NAYA: 'increment' ko import kiya hai accurate counting ke liye
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -225,8 +226,6 @@
             let displayPosts = [...window.allPosts];
             
             let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
-            
-            // NAYA: User ke purane likes/dislikes read karo
             let upvoted = JSON.parse(localStorage.getItem('upvoted') || '[]');
             let downvoted = JSON.parse(localStorage.getItem('downvoted') || '[]');
             
@@ -259,7 +258,6 @@
                 const isMyPost = myPosts.includes(data.id);
                 const deleteBtnHTML = isMyPost ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
-                // NAYA: Buttons ke colors aur states set karo
                 const isUpvoted = upvoted.includes(data.id);
                 const isDownvoted = downvoted.includes(data.id);
                 const upColor = isUpvoted ? 'var(--primary)' : 'inherit';
@@ -302,38 +300,31 @@
             });
         };
 
-        // NAYA: Advanced Toggle Vote Logic
         window.vote = async function(postId, voteType) {
             let upvoted = JSON.parse(localStorage.getItem('upvoted') || '[]');
             let downvoted = JSON.parse(localStorage.getItem('downvoted') || '[]');
             const postRef = doc(db, "confessions", postId);
             let updates = {};
 
-            if (voteType === 1) { // Upvote button clicked
+            if (voteType === 1) { 
                 if (upvoted.includes(postId)) {
-                    // Undo Upvote
                     updates.upvotes = increment(-1);
                     upvoted = upvoted.filter(id => id !== postId);
                 } else {
-                    // Add Upvote
                     updates.upvotes = increment(1);
                     upvoted.push(postId);
-                    // Agar pehle downvote kiya tha, toh usko hatao
                     if (downvoted.includes(postId)) {
                         updates.downvotes = increment(-1);
                         downvoted = downvoted.filter(id => id !== postId);
                     }
                 }
-            } else { // Downvote button clicked
+            } else { 
                 if (downvoted.includes(postId)) {
-                    // Undo Downvote
                     updates.downvotes = increment(-1);
                     downvoted = downvoted.filter(id => id !== postId);
                 } else {
-                    // Add Downvote
                     updates.downvotes = increment(1);
                     downvoted.push(postId);
-                    // Agar pehle upvote kiya tha, toh usko hatao
                     if (upvoted.includes(postId)) {
                         updates.upvotes = increment(-1);
                         upvoted = upvoted.filter(id => id !== postId);
@@ -341,14 +332,11 @@
                 }
             }
 
-            // Local storage mein save karo taaki refresh par memory rahe
             localStorage.setItem('upvoted', JSON.stringify(upvoted));
             localStorage.setItem('downvoted', JSON.stringify(downvoted));
 
-            // Instant UI update
             window.renderFeed();
 
-            // Firebase Database update
             if (Object.keys(updates).length > 0) {
                 await updateDoc(postRef, updates);
             }
@@ -369,7 +357,6 @@
             }
         };
 
-        // Pinch-to-Zoom Custom Logic
         window.initialPinchDistance = null;
 
         window.startPinch = function(e, img) {
@@ -570,8 +557,9 @@
             section.style.display = section.style.display === 'block' ? 'none' : 'block';
         };
 
+        // NAYA: WhatsApp share text ka naam change kiya
         window.shareToWhatsApp = function(encodedText) {
-            const shareText = `Check out this confession on Campus Unfiltered: \n\n"${decodeURIComponent(encodedText)}"\n\nDownload the app to reply!`;
+            const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decodeURIComponent(encodedText)}"\n\nDownload the app to reply!`;
             window.location.href = `whatsapp://send?text=${shareText}`;
         };
 
