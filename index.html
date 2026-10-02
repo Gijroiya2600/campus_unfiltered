@@ -22,14 +22,15 @@
             border-bottom: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
         }
         header h1 { font-size: 1.25rem; font-weight: bold; margin: 0; color: white; display: flex; align-items: center; }
-        .header-icons { display: flex; gap: 20px; align-items: center; }
+        .header-icons { display: flex; gap: 15px; align-items: center; }
         .bell-wrapper { position: relative; cursor: pointer; }
         .bell-icon { color: var(--text-muted); font-size: 1.25rem; transition: color 0.2s; }
-        .bell-wrapper:hover .bell-icon { color: var(--text-main); }
         .notif-badge {
             position: absolute; top: -5px; right: -6px; background-color: var(--notif-badge);
             color: white; font-size: 0.65rem; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center;
         }
+        .login-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        .user-profile-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 1px solid var(--primary); }
         .notif-dropdown {
             display: none; position: absolute; top: 65px; right: 16px; background-color: var(--card-bg);
             border: 1px solid var(--border-color); border-radius: 12px; width: 250px; max-height: 300px; overflow-y: auto; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.5); z-index: 100;
@@ -49,7 +50,7 @@
         .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .user-block { display: flex; align-items: center; }
-        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); overflow: hidden; }
         .user-info h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: white; }
         .user-info p { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
         .report-btn { color: var(--text-muted); background: none; border: none; cursor: pointer; transition: 0.2s; font-size: 1rem; }
@@ -73,32 +74,23 @@
         .nav-item:hover { color: var(--text-main); transform: scale(1.1); }
         .nav-item.active { color: var(--primary); }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.8); backdrop-filter: blur(5px); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-content { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 500px; padding: 20px; animation: popIn 0.3s ease-out; }
+        .modal-content { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; width: 90%; max-width: 500px; padding: 20px; animation: popIn 0.3s ease-out; max-height: 80vh; overflow-y: auto; }
         @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 16px; }
         .modal-header h2 { margin: 0; font-size: 1.1rem; color: white; }
         .close-btn { background: none; border: none; color: var(--text-muted); font-size: 1.5rem; cursor: pointer; }
-        .close-btn:hover { color: var(--downvote); }
         .modal-content textarea { width: 100%; background: transparent; color: var(--text-main); border: none; outline: none; resize: none; font-size: 1.1rem; font-family: inherit; margin-bottom: 10px; }
         .post-actions { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: 8px; }
         .action-icons button { background: none; border: none; color: var(--text-muted); font-size: 1.25rem; margin-right: 16px; cursor: pointer; }
-        .action-icons button:hover { color: var(--primary); }
         .post-btn { background-color: var(--primary); color: white; border: none; padding: 8px 24px; border-radius: 9999px; font-weight: bold; font-size: 1rem; cursor: pointer; }
-        
         .image-preview-container { position: relative; display: none; margin-bottom: 15px; }
         .image-preview-container img { width: 100%; border-radius: 12px; max-height: 400px; object-fit: contain; background: #000; }
         .remove-image-btn { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.7); color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        .feed-img {
-            width: 100%; border-radius: 12px; margin-bottom: 12px;
-            transform-origin: center center;
-            transition: transform 0.3s ease-out;
-        }
+        .feed-img { width: 100%; border-radius: 12px; margin-bottom: 12px; transform-origin: center center; transition: transform 0.3s ease-out; }
     </style>
 </head>
 <body>
 
-    <!-- SECURITY: Right-Click and Inspect Block -->
     <script>
         document.addEventListener('contextmenu', event => event.preventDefault());
         document.onkeydown = function(e) {
@@ -118,6 +110,9 @@
                     <i class="fa-solid fa-bell bell-icon"></i>
                     <div id="notifBadge" class="notif-badge">0</div>
                 </div>
+                <div id="authContainer">
+                    <button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>
+                </div>
             </div>
         </div>
     </header>
@@ -132,6 +127,32 @@
     <div id="notifDropdown" class="notif-dropdown">
         <div class="notif-header">Notifications</div>
         <div id="notifList" class="notif-list"><div class="notif-item text-muted" id="emptyNotif">No new notifications</div></div>
+    </div>
+
+    <!-- Profile Dashboard Modal -->
+    <div id="profileModal" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>My Profile</h2>
+                <button class="close-btn" onclick="window.closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="profileDetails" style="text-align: center; margin-bottom: 20px;"></div>
+            <h3 style="font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Confessions</h3>
+            <div id="myProfilePostsList" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <!-- NEW: Professional Login Prompt Modal (Instead of Alert) -->
+    <div id="loginPromptModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 380px; text-align: center; padding: 30px 20px;">
+            <div style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-user-shield"></i></div>
+            <h2 style="margin: 0 0 10px 0; color: white; font-size: 1.25rem;">Authentication Required</h2>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Please login with your Google account to view your profile, manage posts, and interact securely.</p>
+            <button onclick="window.loginWithGoogle()" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: bold; font-size: 0.95rem; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px;">
+                <i class="fa-brands fa-google"></i> Continue with Google
+            </button>
+            <button onclick="window.closeLoginPrompt()" style="background: transparent; color: var(--text-muted); border: none; padding: 8px; font-size: 0.85rem; cursor: pointer;">Cancel</button>
+        </div>
     </div>
 
     <div id="postModal" class="modal-overlay">
@@ -188,13 +209,14 @@
         <div class="nav-item active" onclick="window.scrollToTop()"><i class="fa-solid fa-house"></i></div>
         <div class="nav-item" onclick="window.toggleSearch()"><i class="fa-solid fa-magnifying-glass"></i></div>
         <div class="nav-item" onclick="window.openModal()" style="color: var(--primary); transform: scale(1.15);"><i class="fa-solid fa-square-plus"></i></div>
-        <div class="nav-item" onclick="alert('Anonymous Profile coming soon!')"><i class="fa-regular fa-user"></i></div>
+        <div class="nav-item" onclick="window.handleProfileClick()"><i class="fa-regular fa-user"></i></div>
     </nav>
 
     <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
@@ -208,12 +230,89 @@
 
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
+        const auth = getAuth(app);
+        const provider = new GoogleAuthProvider();
 
+        window.currentUser = null;
         window.allPosts = [];
         window.currentSort = 'latest';
         let unreadNotifications = 0;
         let postToReport = null;
         window.currentImageBase64 = null;
+
+        onAuthStateChanged(auth, (user) => {
+            window.currentUser = user;
+            const authContainer = document.getElementById('authContainer');
+            if (user) {
+                authContainer.innerHTML = `<img src="${user.photoURL || 'https://via.placeholder.com/32'}" class="user-profile-icon" title="${user.displayName}" onclick="window.handleProfileClick()">`;
+            } else {
+                authContainer.innerHTML = `<button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>`;
+            }
+        });
+
+        window.loginWithGoogle = async function() {
+            try {
+                window.closeLoginPrompt();
+                await signInWithPopup(auth, provider);
+                window.createNotification("Logged in successfully!", "fa-check");
+            } catch (error) {
+                alert("Login failed: " + error.message);
+            }
+        };
+
+        window.logoutUser = async function() {
+            if (confirm("Do you want to logout?")) {
+                await signOut(auth);
+                window.closeProfileModal();
+                window.createNotification("Logged out successfully", "fa-right-from-bracket");
+            }
+        };
+
+        window.handleProfileClick = function() {
+            if (!window.currentUser) {
+                document.getElementById('loginPromptModal').style.display = 'flex';
+            } else {
+                window.openProfileModal();
+            }
+        };
+
+        window.closeLoginPrompt = function() {
+            document.getElementById('loginPromptModal').style.display = 'none';
+        };
+
+        window.openProfileModal = function() {
+            const user = window.currentUser;
+            const detailsDiv = document.getElementById('profileDetails');
+            detailsDiv.innerHTML = `
+                <img src="${user.photoURL}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
+                <h3 style="margin: 0; color: white;">${user.displayName}</h3>
+                <p style="margin: 5px 0 15px 0; font-size: 0.8rem; color: var(--text-muted);">${user.email}</p>
+                <button onclick="window.logoutUser()" style="background: var(--downvote); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Logout</button>
+            `;
+
+            const myPostsList = document.getElementById('myProfilePostsList');
+            myPostsList.innerHTML = "";
+            const userPosts = window.allPosts.filter(p => p.uid === user.uid);
+
+            if (userPosts.length === 0) {
+                myPostsList.innerHTML = '<p style="text-align: center; color: var(--text-muted); font-size: 0.85rem;">You have not posted any confessions yet.</p>';
+            } else {
+                userPosts.forEach(p => {
+                    myPostsList.insertAdjacentHTML('beforeend', `
+                        <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
+                            <span style="font-size: 0.85rem; color: #d1d5db; max-width: 75%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.text}</span>
+                            <button onclick="window.deletePost('${p.id}')" style="background: none; border: none; color: var(--downvote); cursor: pointer; font-size: 1rem;"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    `);
+                });
+            }
+
+            document.getElementById('profileModal').style.display = 'flex';
+        };
+
+        window.closeProfileModal = function() {
+            document.getElementById('profileModal').style.display = 'none';
+        };
 
         const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(15));
         
@@ -263,7 +362,7 @@
 
                 const imageHTML = data.imageUrl ? `<img src="${data.imageUrl}" class="feed-img" ontouchstart="window.startPinch(event, this)" ontouchmove="window.movePinch(event, this)" ontouchend="window.endPinch(event, this)">` : '';
 
-                const isMyPost = myPosts.includes(data.id);
+                const isMyPost = myPosts.includes(data.id) || (window.currentUser && data.uid === window.currentUser.uid);
                 const deleteBtnHTML = isMyPost ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
                 const isUpvoted = upvoted.includes(data.id);
@@ -355,6 +454,7 @@
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
                     window.createNotification("Post deleted successfully!", "fa-trash");
+                    window.closeProfileModal();
                     
                     let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
                     myPosts = myPosts.filter(id => id !== postId);
@@ -468,7 +568,8 @@
                     upvotes: 0,
                     downvotes: 0,
                     comments: [],
-                    timestamp: Date.now()
+                    timestamp: Date.now(),
+                    uid: window.currentUser ? window.currentUser.uid : "anonymous"
                 });
                 
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
