@@ -270,7 +270,7 @@
     <div id="adminModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h2>🛡️️ Admin Moderation Panel</h2>
+                <h2>🛡 Admin Moderation Panel</h2>
                 <button class="close-btn" onclick="window.closeAdminModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Review flagged confessions and take action.</p>
@@ -504,11 +504,11 @@
             }
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
-                let newPosts = [];
+                let fetchedPosts = [];
                 snapshot.forEach((docSnap) => {
                     const data = docSnap.data();
                     data.id = docSnap.id;
-                    newPosts.push(data);
+                    fetchedPosts.push(data);
                 });
 
                 if (snapshot.docs.length > 0) {
@@ -517,16 +517,19 @@
                     lastVisibleDoc = null;
                 }
 
-                const oldIds = window.allPosts.map(p => p.id).join(',');
-                const newIds = newPosts.map(p => p.id).join(',');
+                // Deduplicate and merge cleanly
+                const map = new Map();
+                window.allPosts.forEach(p => map.set(p.id, p));
+                fetchedPosts.forEach(p => map.set(p.id, p));
+                window.allPosts = Array.from(map.values());
 
-                if (oldIds !== newIds || window.allPosts.length !== newPosts.length) {
-                    window.allPosts = newPosts;
-                    window.renderFeed();
+                if (window.currentSort === 'trending') {
+                    window.allPosts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
                 } else {
-                    window.allPosts = newPosts;
-                    newPosts.forEach(post => updatePostCardDOM(post.id));
+                    window.allPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 }
+
+                window.renderFeed();
 
                 const indicator = document.getElementById('loadingMoreIndicator');
                 if (snapshot.docs.length < PAGE_SIZE) {
@@ -572,7 +575,10 @@
                 }
 
                 if (fetchedPosts.length > 0) {
-                    window.allPosts = [...window.allPosts, ...fetchedPosts];
+                    const map = new Map();
+                    window.allPosts.forEach(p => map.set(p.id, p));
+                    fetchedPosts.forEach(p => map.set(p.id, p));
+                    window.allPosts = Array.from(map.values());
                     window.renderFeed();
                 }
 
@@ -718,6 +724,14 @@
         };
 
         window.renderFeed = function() {
+            // Preserve open comments and draft inputs across re-renders
+            const openCommentsState = {};
+            document.querySelectorAll('.comments-section.show-comments').forEach(el => {
+                const postId = el.id.replace('comments-', '');
+                const inputEl = document.getElementById('commentInput-' + postId);
+                openCommentsState[postId] = inputEl ? inputEl.value : '';
+            });
+
             const feed = document.getElementById('feed');
             feed.innerHTML = "";
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
@@ -837,11 +851,22 @@
                 `);
             });
 
+            // Restore open comment sections and input text
+            Object.keys(openCommentsState).forEach(id => {
+                const section = document.getElementById('comments-' + id);
+                if (section) {
+                    section.classList.add('show-comments');
+                    const inputEl = document.getElementById('commentInput-' + id);
+                    if (inputEl && openCommentsState[id]) {
+                        inputEl.value = openCommentsState[id];
+                    }
+                }
+            });
+
             const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
-        // --- FIXED: Real-time comment updates & DOM synchronization ---
         function updatePostCardDOM(postId) {
             const post = window.allPosts.find(p => p.id === postId);
             if (!post) return;
@@ -885,7 +910,6 @@
                 }
             });
 
-            // Update comments list live
             const commentsListEl = cardEl.querySelector('.comments-list');
             if (commentsListEl && post.comments) {
                 let commentsHTML = "";
