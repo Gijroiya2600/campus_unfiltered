@@ -73,7 +73,6 @@
         
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
         
-        /* Notice & Prompt Banners */
         .notice-banner { background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(24, 24, 27, 0.9)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; font-size: 0.85rem; }
         .notice-banner i { color: var(--primary); font-size: 1.2rem; }
 
@@ -261,7 +260,7 @@
             <textarea id="confessionInput" rows="4" placeholder="Spill the tea... use #hashtags!"></textarea>
             
             <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; cursor: pointer;">
-                <input type="checkbox" id="disappearingToggle" style="accent-color: var(--primary);"> Disappear after 24 hours (Snap-style ⏱️️)
+                <input type="checkbox" id="disappearingToggle" style="accent-color: var(--primary);"> Disappear after 24 hours (Snap-style ⏱)
             </label>
 
             <input type="file" id="mediaUpload" style="display: none;" accept="image/*" onchange="window.handleImageSelect(event)">
@@ -297,16 +296,6 @@
     </div>
 
     <div class="container">
-        <!-- Question of the Day Banner -->
-        <div class="card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(24, 24, 27, 0.9)); border: 1px solid var(--primary); margin-bottom: 16px; padding: 16px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                <span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 8px; border-radius: 9999px; font-weight: bold;">🎯 Question of the Day</span>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">Campus Engagement</span>
-            </div>
-            <h3 style="margin: 0 0 10px 0; font-size: 0.95rem; color: white;" id="dailyPromptText">"What is your absolute favorite spot on campus to chill?"</h3>
-            <button onclick="window.answerPrompt()" style="background: var(--primary); color: white; border: none; padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-pen-nib"></i> Answer Prompt ✨</button>
-        </div>
-
         <div class="notice-banner">
             <i class="fa-solid fa-bullhorn"></i>
             <div><b>Campus Notice:</b> Keep confessions respectful. Avoid targeting specific individuals. Stay anonymous & safe! 🎉</div>
@@ -317,7 +306,7 @@
             <div class="pill active" onclick="window.filterByTag('all', this)">🔥 All</div>
             <div class="pill" onclick="window.filterByTag('#hostel', this)">🏠 #hostel</div>
             <div class="pill" onclick="window.filterByTag('#exams', this)">📚 #exams</div>
-            <div class="pill" onclick="window.filterByTag('#crush', this)">❤️ #crush</div>
+            <div class="pill" onclick="window.filterByTag('#crush', this)">❤ #crush</div>
             <div class="pill" onclick="window.filterByTag('#events', this)">🎉 #events</div>
             <div class="pill" onclick="window.filterByTag('#canteen', this)">☕ #canteen</div>
         </div>
@@ -391,12 +380,24 @@
         const ADMIN_EMAIL = "klak50506@gmail.com";
         const BAD_WORDS = ["gali1", "gali2"]; 
 
+        // Subtle Haptic Feedback Helper
+        function triggerHaptic(ms = 30) {
+            if ("vibrate" in navigator) {
+                try {
+                    navigator.vibrate(ms);
+                } catch (e) {
+                    // Ignore if restricted by browser policy
+                }
+            }
+        }
+
         const savedTheme = localStorage.getItem('app_accent_color');
         if (savedTheme) { document.documentElement.style.setProperty('--primary', savedTheme); }
 
-        window.openThemeModal = function() { document.getElementById('themeModal').style.display = 'flex'; };
-        window.closeThemeModal = function() { document.getElementById('themeModal').style.display = 'none'; };
+        window.openThemeModal = function() { triggerHaptic(20); document.getElementById('themeModal').style.display = 'flex'; };
+        window.closeThemeModal = function() { triggerHaptic(15); document.getElementById('themeModal').style.display = 'none'; };
         window.setTheme = function(color) {
+            triggerHaptic(40);
             document.documentElement.style.setProperty('--primary', color);
             localStorage.setItem('app_accent_color', color);
             window.closeThemeModal();
@@ -419,7 +420,6 @@
             return cleanText;
         }
 
-        // Anti-Doxxing Guard Regex Check (Phones, 10-digit IDs)
         function checkDoxxing(text) {
             const phoneRegex = /(\b\d{10}\b)|(\+91\d{10})|(\b[6-9]\d{9}\b)/;
             if (phoneRegex.test(text)) {
@@ -427,12 +427,6 @@
             }
             return null;
         }
-
-        window.answerPrompt = function() {
-            const promptText = document.getElementById('dailyPromptText').innerText;
-            window.openModal();
-            document.getElementById('confessionInput').value = `Daily Prompt (${promptText}) - `;
-        };
 
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -504,6 +498,7 @@
         });
 
         window.loginWithGoogle = async function() {
+            triggerHaptic(30);
             try {
                 window.closeLoginPrompt();
                 await signInWithPopup(auth, provider);
@@ -512,6 +507,7 @@
         };
 
         window.logoutUser = async function() {
+            triggerHaptic(40);
             if (confirm("Do you want to logout?")) {
                 await signOut(auth);
                 window.closeProfileModal();
@@ -520,13 +516,15 @@
         };
 
         window.handleProfileClick = function() {
+            triggerHaptic(20);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; } 
             else { window.openProfileModal(); }
         };
 
-        window.closeLoginPrompt = function() { document.getElementById('loginPromptModal').style.display = 'none'; };
+        window.closeLoginPrompt = function() { triggerHaptic(15); document.getElementById('loginPromptModal').style.display = 'none'; };
 
         window.openProfileModal = function() {
+            triggerHaptic(25);
             const user = window.currentUser;
             const detailsDiv = document.getElementById('profileDetails');
             let adminBtnHTML = isUserAdmin() ? `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>` : '';
@@ -558,10 +556,11 @@
             document.getElementById('profileModal').style.display = 'flex';
         };
 
-        window.closeProfileModal = function() { document.getElementById('profileModal').style.display = 'none'; };
+        window.closeProfileModal = function() { triggerHaptic(15); document.getElementById('profileModal').style.display = 'none'; };
 
         window.openAdminModal = function() {
             if (!isUserAdmin()) { alert("Access Denied."); return; }
+            triggerHaptic(30);
             window.closeProfileModal();
             document.getElementById('adminModal').style.display = 'flex';
             const listContainer = document.getElementById('reportedPostsList');
@@ -588,10 +587,11 @@
             });
         };
 
-        window.closeAdminModal = function() { document.getElementById('adminModal').style.display = 'none'; };
+        window.closeAdminModal = function() { triggerHaptic(15); document.getElementById('adminModal').style.display = 'none'; };
 
         window.adminDeletePost = async function(postId) {
             if (!isUserAdmin()) return;
+            triggerHaptic(40);
             if (confirm("Permanently delete this post?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
@@ -603,6 +603,7 @@
 
         window.dismissReport = async function(postId) {
             if (!isUserAdmin()) return;
+            triggerHaptic(30);
             try {
                 const postRef = doc(db, "confessions", postId);
                 await updateDoc(postRef, { reports: [], isFlagged: false });
@@ -612,6 +613,7 @@
         };
 
         window.filterByTag = function(tag, el) {
+            triggerHaptic(20);
             document.querySelectorAll('.hashtag-pills .pill').forEach(p => p.classList.remove('active'));
             el.classList.add('active');
             window.selectedTagFilter = tag;
@@ -633,9 +635,7 @@
             displayPosts.forEach((data) => {
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
-                // Expiration check for Snap-Style 24h posts
                 if (data.expiresAt && Date.now() > data.expiresAt) return;
-
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
                 if (data.isFlagged && data.reports && data.reports.length >= 3 && !isUserAdmin()) return;
 
@@ -676,7 +676,6 @@
                 const isViral = (data.upvotes || 0) >= 10;
                 const viralBadgeHTML = isViral ? `<span class="viral-badge">🔥 Viral</span>` : '';
                 
-                // Snap timer indicator
                 let timerBadgeHTML = "";
                 if (data.expiresAt) {
                     const hoursLeft = Math.max(1, Math.ceil((data.expiresAt - Date.now()) / (1000 * 60 * 60)));
@@ -742,6 +741,7 @@
         };
 
         window.vote = async function(postId, voteType) {
+            triggerHaptic(25);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
             const postRef = doc(db, "confessions", postId);
@@ -768,6 +768,7 @@
         };
 
         window.reactPost = async function(postId, reactionType) {
+            triggerHaptic(20);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
             const postRef = doc(db, "confessions", postId);
@@ -792,6 +793,7 @@
         };
 
         window.deletePost = async function(postId) {
+            triggerHaptic(35);
             if(confirm("Delete this confession?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
@@ -823,6 +825,7 @@
         };
 
         window.handleImageSelect = function(event) {
+            triggerHaptic(15);
             const file = event.target.files[0];
             if (!file) return;
             const reader = new FileReader();
@@ -845,12 +848,14 @@
         };
 
         window.removeImage = function() {
+            triggerHaptic(15);
             window.currentImageBase64 = null;
             document.getElementById('imagePreviewContainer').style.display = 'none';
             document.getElementById('mediaUpload').value = ""; 
         };
 
         window.postConfession = async function() {
+            triggerHaptic(30);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const input = document.getElementById('confessionInput'); 
             const isDisappearing = document.getElementById('disappearingToggle').checked;
@@ -858,12 +863,8 @@
             let text = input.value.trim();
             if (text === "" && !window.currentImageBase64) return;
             
-            // Anti-Doxxing Guard Check
             const doxxingWarning = checkDoxxing(text);
-            if (doxxingWarning) {
-                alert(doxxingWarning);
-                return;
-            }
+            if (doxxingWarning) { alert(doxxingWarning); return; }
 
             text = filterProfanity(text);
 
@@ -885,6 +886,7 @@
         };
 
         window.addComment = async function(postId) {
+            triggerHaptic(25);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const input = document.getElementById('commentInput-' + postId); let text = input.value.trim();
             if (text === "") return;
@@ -901,6 +903,7 @@
         };
 
         window.sortFeed = function(type) { 
+            triggerHaptic(20);
             document.getElementById('latestBtn').classList.remove('active'); 
             document.getElementById('trendingBtn').classList.remove('active'); 
             document.getElementById(type + 'Btn').classList.add('active'); 
@@ -911,25 +914,46 @@
         };
 
         window.searchHashtag = function(tag) { document.getElementById('searchContainer').style.display = 'block'; document.getElementById('searchInput').value = tag; window.scrollToTop(); window.searchPosts(); };
-        window.toggleSearch = function() { const searchContainer = document.getElementById('searchContainer'); if (searchContainer.style.display === 'block') { searchContainer.style.display = 'none'; document.getElementById('searchInput').value = ''; window.searchPosts(); } else { searchContainer.style.display = 'block'; document.getElementById('searchInput').focus(); window.scrollToTop(); } };
+        window.toggleSearch = function() { 
+            triggerHaptic(20);
+            const searchContainer = document.getElementById('searchContainer'); 
+            if (searchContainer.style.display === 'block') { searchContainer.style.display = 'none'; document.getElementById('searchInput').value = ''; window.searchPosts(); } 
+            else { searchContainer.style.display = 'block'; document.getElementById('searchInput').focus(); window.scrollToTop(); } 
+        };
         window.searchPosts = function() { window.renderFeed(); };
-        window.openModal = function() { if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; } document.getElementById('postModal').style.display = 'flex'; document.getElementById('confessionInput').focus(); };
-        window.closeModal = function() { document.getElementById('postModal').style.display = 'none'; window.removeImage(); };
+        window.openModal = function() { 
+            triggerHaptic(25);
+            if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; } 
+            document.getElementById('postModal').style.display = 'flex'; 
+            document.getElementById('confessionInput').focus(); 
+        };
+        window.closeModal = function() { triggerHaptic(15); document.getElementById('postModal').style.display = 'none'; window.removeImage(); };
         window.scrollToTop = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); };
-        window.toggleNotifications = function() { const dropdown = document.getElementById('notifDropdown'); const badge = document.getElementById('notifBadge'); if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } };
+        window.toggleNotifications = function() { 
+            triggerHaptic(20);
+            const dropdown = document.getElementById('notifDropdown'); const badge = document.getElementById('notifBadge'); 
+            if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } 
+            else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } 
+        };
         window.createNotification = function(message, iconName) { const list = document.getElementById('notifList'); const emptyMsg = document.getElementById('emptyNotif'); const badge = document.getElementById('notifBadge'); if (emptyMsg) emptyMsg.remove(); list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`); unreadNotifications++; badge.innerText = unreadNotifications; badge.style.display = 'flex'; };
-        window.toggleComments = function(postId) { const section = document.getElementById('comments-' + postId); section.style.display = section.style.display === 'block' ? 'none' : 'block'; };
+        window.toggleComments = function(postId) { 
+            triggerHaptic(15);
+            const section = document.getElementById('comments-' + postId); 
+            section.style.display = section.style.display === 'block' ? 'none' : 'block'; 
+        };
         
         window.shareToWhatsApp = function(encodedText) { 
+            triggerHaptic(25);
             const decoded = decodeURIComponent(encodedText);
             const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decoded}"\n\nDownload the app to reply!`; 
             window.location.href = `whatsapp://send?text=${encodeURIComponent(shareText)}`; 
         };
 
-        window.reportPost = function(id) { postToReport = id; document.getElementById('reportModal').style.display = 'flex'; };
-        window.closeReportModal = function() { document.getElementById('reportModal').style.display = 'none'; postToReport = null; };
+        window.reportPost = function(id) { triggerHaptic(20); postToReport = id; document.getElementById('reportModal').style.display = 'flex'; };
+        window.closeReportModal = function() { triggerHaptic(15); document.getElementById('reportModal').style.display = 'none'; postToReport = null; };
         
         window.submitReport = async function() { 
+            triggerHaptic(30);
             const reasons = document.getElementsByName('reportReason'); 
             let selectedReason = ""; 
             for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = reasons[i].value; reasons[i].checked = false; break; } } 
@@ -986,6 +1010,7 @@
             ptrContainer.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
             if (pullDistance > 90) {  
                 isRefreshing = true;
+                triggerHaptic(50);
                 ptrContainer.style.transform = `translateX(-50%) translateY(55px)`; 
                 ptrIcon.classList.add('fa-spin'); 
                 setTimeout(() => { location.reload(); }, 800); 
