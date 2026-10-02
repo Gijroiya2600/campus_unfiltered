@@ -10,11 +10,14 @@
             --bg-color: #09090b; --card-bg: #18181b; --primary: #8b5cf6;
             --text-main: #f3f4f6; --text-muted: #9ca3af; --border-color: #27272a;
             --downvote: #ef4444; --notif-badge: #ef4444; --whatsapp: #25D366;
+            --scroll-skew: 0deg;
+            --scroll-scale: 1;
         }
         body {
             background-color: var(--bg-color); color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0; padding: 0; line-height: 1.5; padding-bottom: 70px; overscroll-behavior-y: contain; 
+            overflow-x: hidden; 
         }
         #ptr-spinner { text-align: center; padding: 15px; color: var(--primary); font-size: 1.5rem; display: none; background: var(--bg-color); }
         header {
@@ -47,7 +50,30 @@
         .feed-filters { display: flex; gap: 12px; margin-bottom: 20px; }
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; margin-bottom: 24px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+        
+        .card-reveal-wrapper {
+            opacity: 0;
+            transform: translateY(80px) scale(0.9);
+            filter: blur(5px);
+            transition: all 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform, opacity, filter;
+            margin-bottom: 24px;
+        }
+        .card-reveal-wrapper.show {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
+        }
+
+        .card { 
+            background-color: var(--card-bg); border: 1px solid var(--border-color); 
+            border-radius: 16px; padding: 16px; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            transform: skewY(var(--scroll-skew)) scaleY(var(--scroll-scale));
+            transition: transform 0.15s ease-out; 
+            will-change: transform;
+        }
+        
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .user-block { display: flex; align-items: center; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); overflow: hidden; }
@@ -69,7 +95,7 @@
         .comment-input-area input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 9999px; font-size: 0.9rem; outline: none; }
         .comment-btn { background-color: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
         .comment-item { background: rgba(255, 255, 255, 0.03); padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.85rem; color: #d1d5db; }
-        .comment-meta { font-size: 0.75rem; color: var(--primary); margin-bottom: 4px; font-weight: bold; }
+        .comment-meta { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
         .bottom-nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 600px; background-color: rgba(9, 9, 11, 0.95); backdrop-filter: blur(10px); border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; align-items: center; padding: 12px 0; z-index: 50; }
         .nav-item { color: var(--text-muted); font-size: 1.5rem; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; align-items: center; }
         .nav-item:hover { color: var(--text-main); transform: scale(1.1); }
@@ -91,15 +117,6 @@
     </style>
 </head>
 <body>
-
-    <script>
-        document.addEventListener('contextmenu', event => event.preventDefault());
-        document.onkeydown = function(e) {
-            if (e.keyCode == 123) return false;
-            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) return false;
-            if (e.ctrlKey && e.keyCode == 85) return false;
-        };
-    </script>
 
     <div id="ptr-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Refreshing...</div>
 
@@ -148,7 +165,7 @@
         <div class="modal-content" style="max-width: 380px; text-align: center; padding: 30px 20px;">
             <div style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-user-shield"></i></div>
             <h2 style="margin: 0 0 10px 0; color: white; font-size: 1.25rem;">Authentication Required</h2>
-            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Please login with your Google account to view your profile, manage posts, and interact securely.</p>
+            <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 25px;">Please login with your Google account to post confessions, vote, and interact securely.</p>
             <button onclick="window.loginWithGoogle()" style="background: var(--primary); color: white; border: none; padding: 12px 24px; border-radius: 9999px; font-weight: bold; font-size: 0.95rem; cursor: pointer; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 12px;">
                 <i class="fa-brands fa-google"></i> Continue with Google
             </button>
@@ -216,7 +233,7 @@
     <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -241,6 +258,54 @@
         let postToReport = null;
         window.currentImageBase64 = null;
 
+        /* --- Intersection Observer (For Scroll Reveal) --- */
+        window.cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('show');
+                } else {
+                    entry.target.classList.remove('show'); 
+                }
+            });
+        }, {
+            root: null,
+            rootMargin: '0px 0px -40px 0px', 
+            threshold: 0
+        });
+
+        /* --- Velocity Scroll Logic (For Skew & Stretch) --- */
+        let lastScrollY = window.scrollY;
+        let scrollTicking = false;
+        let scrollResetTimeout;
+
+        window.addEventListener('scroll', () => {
+            if (!scrollTicking) {
+                window.requestAnimationFrame(() => {
+                    const currentScrollY = window.scrollY;
+                    const velocity = currentScrollY - lastScrollY;
+                    lastScrollY = currentScrollY;
+
+                    let skew = velocity * 0.035; 
+                    skew = Math.max(-3.5, Math.min(3.5, skew));
+                    
+                    let stretch = 1 + Math.abs(velocity * 0.0008);
+                    stretch = Math.min(1.03, stretch); 
+
+                    document.documentElement.style.setProperty('--scroll-skew', `${skew}deg`);
+                    document.documentElement.style.setProperty('--scroll-scale', `${stretch}`);
+
+                    clearTimeout(scrollResetTimeout);
+                    scrollResetTimeout = setTimeout(() => {
+                        document.documentElement.style.setProperty('--scroll-skew', `0deg`);
+                        document.documentElement.style.setProperty('--scroll-scale', `1`);
+                    }, 120);
+
+                    scrollTicking = false;
+                });
+                scrollTicking = true;
+            }
+        });
+
         onAuthStateChanged(auth, (user) => {
             window.currentUser = user;
             const authContainer = document.getElementById('authContainer');
@@ -249,6 +314,7 @@
             } else {
                 authContainer.innerHTML = `<button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>`;
             }
+            window.renderFeed();
         });
 
         window.loginWithGoogle = async function() {
@@ -258,7 +324,6 @@
                 window.createNotification("Logged in successfully!", "fa-check");
             } catch (error) {
                 alert("Login Error: " + error.code + " - " + error.message);
-                console.error(error);
             }
         };
 
@@ -335,8 +400,6 @@
             let displayPosts = [...window.allPosts];
             
             let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
-            let upvoted = JSON.parse(localStorage.getItem('upvoted') || '[]');
-            let downvoted = JSON.parse(localStorage.getItem('downvoted') || '[]');
             
             if (window.currentSort === 'trending') displayPosts.sort((a, b) => b.upvotes - a.upvotes); 
 
@@ -358,7 +421,21 @@
                 let commentsHTML = "";
                 if(data.comments) {
                     data.comments.forEach(c => {
-                        commentsHTML += `<div class="comment-item"><div class="comment-meta">Anonymous 👻</div>${c}</div>`;
+                        if (typeof c === 'string') {
+                            commentsHTML += `<div class="comment-item"><div class="comment-meta" style="color: var(--primary);">Anonymous 👻</div>${c}</div>`;
+                        } else {
+                            const cName = c.userName || "Anonymous Student";
+                            const cAvatar = c.userPhoto ? `<img src="${c.userPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
+                            
+                            commentsHTML += `
+                                <div class="comment-item">
+                                    <div class="comment-meta">
+                                        ${cAvatar} <span style="color: var(--primary);">${cName}</span>
+                                    </div>
+                                    <div style="margin-top: 4px;">${c.text}</div>
+                                </div>
+                            `;
+                        }
                     });
                 }
 
@@ -367,91 +444,84 @@
                 const isMyPost = myPosts.includes(data.id) || (window.currentUser && data.uid === window.currentUser.uid);
                 const deleteBtnHTML = isMyPost ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
-                const isUpvoted = upvoted.includes(data.id);
-                const isDownvoted = downvoted.includes(data.id);
+                const currentUid = window.currentUser ? window.currentUser.uid : null;
+                const isUpvoted = currentUid && data.upvotedBy && data.upvotedBy.includes(currentUid);
+                const isDownvoted = currentUid && data.downvotedBy && data.downvotedBy.includes(currentUid);
+                
                 const upColor = isUpvoted ? 'var(--primary)' : 'inherit';
                 const downColor = isDownvoted ? 'var(--downvote)' : 'inherit';
 
-                // NAYA: Post par logged-in user ka naam aur photo display karna
                 const authorName = data.userName || "Anonymous Student";
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
 
                 feed.insertAdjacentHTML('beforeend', `
-                <div class="card post-item" id="${data.id}">
-                    <div class="feed-header">
-                        <div class="user-block">
-                            <div class="avatar">${authorAvatar}</div>
-                            <div class="user-info">
-                                <h3>${authorName}</h3>
-                                <p>${timeStr}</p>
+                <div class="card-reveal-wrapper">
+                    <div class="card post-item" id="${data.id}">
+                        <div class="feed-header">
+                            <div class="user-block">
+                                <div class="avatar">${authorAvatar}</div>
+                                <div class="user-info">
+                                    <h3>${authorName}</h3>
+                                    <p>${timeStr}</p>
+                                </div>
+                            </div>
+                            <div>
+                                ${deleteBtnHTML}
+                                <button class="report-btn" onclick="window.reportPost('${data.id}')"><i class="fa-regular fa-flag"></i></button>
                             </div>
                         </div>
-                        <div>
-                            ${deleteBtnHTML}
-                            <button class="report-btn" onclick="window.reportPost('${data.id}')"><i class="fa-regular fa-flag"></i></button>
+                        ${imageHTML}
+                        <p class="feed-text raw-text">${data.text}</p>
+                        <div class="feed-stats">
+                            <div class="stat-group">
+                                <div onclick="window.vote('${data.id}', 1)" class="upvote-btn" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span class="vote-count">${data.upvotes}</span></div>
+                                <div onclick="window.vote('${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
+                                <div onclick="window.toggleComments('${data.id}')"><i class="fa-regular fa-comment"></i> <span>${data.comments ? data.comments.length : 0}</span></div>
+                            </div>
+                            <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
                         </div>
-                    </div>
-                    ${imageHTML}
-                    <p class="feed-text raw-text">${data.text}</p>
-                    <div class="feed-stats">
-                        <div class="stat-group">
-                            <div onclick="window.vote('${data.id}', 1)" class="upvote-btn" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span class="vote-count">${data.upvotes}</span></div>
-                            <div onclick="window.vote('${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
-                            <div onclick="window.toggleComments('${data.id}')"><i class="fa-regular fa-comment"></i> <span>${data.comments ? data.comments.length : 0}</span></div>
+                        <div class="comments-section" id="comments-${data.id}">
+                            <div class="comment-input-area">
+                                <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
+                                <button class="comment-btn" onclick="window.addComment('${data.id}')">Reply</button>
+                            </div>
+                            <div class="comments-list">${commentsHTML}</div>
                         </div>
-                        <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
-                    </div>
-                    <div class="comments-section" id="comments-${data.id}">
-                        <div class="comment-input-area">
-                            <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
-                            <button class="comment-btn" onclick="window.addComment('${data.id}')">Reply</button>
-                        </div>
-                        <div class="comments-list">${commentsHTML}</div>
                     </div>
                 </div>
                 `);
             });
+
+            const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
+            wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
         window.vote = async function(postId, voteType) {
-            let upvoted = JSON.parse(localStorage.getItem('upvoted') || '[]');
-            let downvoted = JSON.parse(localStorage.getItem('downvoted') || '[]');
+            if (!window.currentUser) {
+                document.getElementById('loginPromptModal').style.display = 'flex';
+                return;
+            }
+            const uid = window.currentUser.uid;
             const postRef = doc(db, "confessions", postId);
-            let updates = {};
+            const post = window.allPosts.find(p => p.id === postId);
+            if (!post) return;
 
+            const upvotedBy = post.upvotedBy || [];
+            const downvotedBy = post.downvotedBy || [];
+            const hasUpvoted = upvotedBy.includes(uid);
+            const hasDownvoted = downvotedBy.includes(uid);
+
+            let updates = {};
             if (voteType === 1) { 
-                if (upvoted.includes(postId)) {
-                    updates.upvotes = increment(-1);
-                    upvoted = upvoted.filter(id => id !== postId);
-                } else {
-                    updates.upvotes = increment(1);
-                    upvoted.push(postId);
-                    if (downvoted.includes(postId)) {
-                        updates.downvotes = increment(-1);
-                        downvoted = downvoted.filter(id => id !== postId);
-                    }
-                }
+                if (hasUpvoted) { updates.upvotes = increment(-1); updates.upvotedBy = arrayRemove(uid); } 
+                else { updates.upvotes = increment(1); updates.upvotedBy = arrayUnion(uid); if (hasDownvoted) { updates.downvotes = increment(-1); updates.downvotedBy = arrayRemove(uid); } }
             } else { 
-                if (downvoted.includes(postId)) {
-                    updates.downvotes = increment(-1);
-                    downvoted = downvoted.filter(id => id !== postId);
-                } else {
-                    updates.downvotes = increment(1);
-                    downvoted.push(postId);
-                    if (upvoted.includes(postId)) {
-                        updates.upvotes = increment(-1);
-                        upvoted = upvoted.filter(id => id !== postId);
-                    }
-                }
+                if (hasDownvoted) { updates.downvotes = increment(-1); updates.downvotedBy = arrayRemove(uid); } 
+                else { updates.downvotes = increment(1); updates.downvotedBy = arrayUnion(uid); if (hasUpvoted) { updates.upvotes = increment(-1); updates.upvotedBy = arrayRemove(uid); } }
             }
 
-            localStorage.setItem('upvoted', JSON.stringify(upvoted));
-            localStorage.setItem('downvoted', JSON.stringify(downvoted));
-
-            window.renderFeed();
-
             if (Object.keys(updates).length > 0) {
-                await updateDoc(postRef, updates);
+                try { await updateDoc(postRef, updates); } catch (error) { alert("Failed to register vote."); }
             }
         };
 
@@ -461,85 +531,48 @@
                     await deleteDoc(doc(db, "confessions", postId));
                     window.createNotification("Post deleted successfully!", "fa-trash");
                     window.closeProfileModal();
-                    
                     let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
                     myPosts = myPosts.filter(id => id !== postId);
                     localStorage.setItem('myPosts', JSON.stringify(myPosts));
-                } catch(e) {
-                    alert("Error deleting post. Make sure you have internet.");
-                }
+                } catch(e) { alert("Error deleting post."); }
             }
         };
 
         window.initialPinchDistance = null;
-
         window.startPinch = function(e, img) {
             if (e.touches.length === 2) {
-                img.style.transition = 'none'; 
-                img.style.position = 'relative';
-                img.style.zIndex = '100'; 
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                img.style.transition = 'none'; img.style.position = 'relative'; img.style.zIndex = '100'; 
+                const dx = e.touches[0].clientX - e.touches[1].clientX; const dy = e.touches[0].clientY - e.touches[1].clientY;
                 window.initialPinchDistance = Math.hypot(dx, dy);
             }
         };
-
         window.movePinch = function(e, img) {
             if (e.touches.length === 2 && window.initialPinchDistance) {
                 e.preventDefault(); 
-                const dx = e.touches[0].clientX - e.touches[1].clientX;
-                const dy = e.touches[0].clientY - e.touches[1].clientY;
-                const currentDistance = Math.hypot(dx, dy);
-                const scale = currentDistance / window.initialPinchDistance;
-                
-                if (scale >= 1 && scale <= 4) {
-                    img.style.transform = `scale(${scale})`;
-                }
+                const dx = e.touches[0].clientX - e.touches[1].clientX; const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const scale = Math.hypot(dx, dy) / window.initialPinchDistance;
+                if (scale >= 1 && scale <= 4) { img.style.transform = `scale(${scale})`; }
             }
         };
-
         window.endPinch = function(e, img) {
-            window.initialPinchDistance = null;
-            img.style.transition = 'transform 0.3s ease-out'; 
-            img.style.transform = 'scale(1)'; 
-            
-            setTimeout(() => {
-                img.style.position = 'static';
-                img.style.zIndex = 'auto';
-            }, 300);
+            window.initialPinchDistance = null; img.style.transition = 'transform 0.3s ease-out'; img.style.transform = 'scale(1)'; 
+            setTimeout(() => { img.style.position = 'static'; img.style.zIndex = 'auto'; }, 300);
         };
 
         window.handleImageSelect = function(event) {
             const file = event.target.files[0];
             if (!file) return;
-
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1200; 
-                    const scaleSize = MAX_WIDTH / img.width;
-                    
-                    if(img.width > MAX_WIDTH) {
-                        canvas.width = MAX_WIDTH;
-                        canvas.height = img.height * scaleSize;
-                    } else {
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                    }
-                    
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    
+                    const MAX_WIDTH = 1200; const scaleSize = MAX_WIDTH / img.width;
+                    if(img.width > MAX_WIDTH) { canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; } 
+                    else { canvas.width = img.width; canvas.height = img.height; }
+                    const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     window.currentImageBase64 = canvas.toDataURL('image/jpeg', 0.85); 
-                    
-                    if (window.currentImageBase64.length > 950000) {
-                        alert("Yeh photo abhi bhi 1MB limit se badi hai. Kripya thodi kam detail wali photo chunein (Database limit).");
-                        window.removeImage();
-                        return;
-                    }
-
+                    if (window.currentImageBase64.length > 950000) { alert("Photo too large (1MB limit)."); window.removeImage(); return; }
                     document.getElementById('imagePreview').src = window.currentImageBase64;
                     document.getElementById('imagePreviewContainer').style.display = 'block';
                 }
@@ -555,155 +588,49 @@
         };
 
         window.postConfession = async function() {
-            const input = document.getElementById('confessionInput');
-            const btn = document.getElementById('submitPostBtn');
+            if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
+            const input = document.getElementById('confessionInput'); const btn = document.getElementById('submitPostBtn');
             let text = input.value;
-            
             if (text.trim() === "" && !window.currentImageBase64) return;
-
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...';
-            btn.disabled = true;
-
-            const formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;") 
-                                      .replace(/(^|\s)(#[a-z\d-]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
-
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...'; btn.disabled = true;
+            const formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/(^|\s)(#[a-z\d-]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
             try {
-                // NAYA: Post ke sath user ka naam aur photo bhi save karo
                 const docRef = await addDoc(collection(db, "confessions"), {
-                    text: formattedText,
-                    imageUrl: window.currentImageBase64, 
-                    upvotes: 0,
-                    downvotes: 0,
-                    comments: [],
-                    timestamp: Date.now(),
-                    uid: window.currentUser ? window.currentUser.uid : "anonymous",
-                    userName: window.currentUser ? window.currentUser.displayName : "Anonymous Student",
-                    userPhoto: window.currentUser ? window.currentUser.photoURL : null
+                    text: formattedText, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
+                    timestamp: Date.now(), uid: window.currentUser.uid, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
-                
-                let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
-                myPosts.push(docRef.id);
-                localStorage.setItem('myPosts', JSON.stringify(myPosts));
-
-                input.value = "";
-                window.removeImage(); 
-                window.closeModal();
-                document.getElementById('latestBtn').click(); 
-                window.createNotification("Confession posted live!", "fa-check");
-            } catch (e) {
-                alert("Image size is still too large for the database. Please try a smaller photo.");
-                console.error(e);
-            }
-            
-            btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>';
-            btn.disabled = false;
+                let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
+                input.value = ""; window.removeImage(); window.closeModal(); document.getElementById('latestBtn').click(); window.createNotification("Confession posted live!", "fa-check");
+            } catch (e) { alert("Error posting."); }
+            btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>'; btn.disabled = false;
         };
 
         window.addComment = async function(postId) {
-            const input = document.getElementById('commentInput-' + postId);
-            const text = input.value;
+            if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
+            const input = document.getElementById('commentInput-' + postId); const text = input.value;
             if (text.trim() === "") return;
-            const formattedComment = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+            const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.photoURL || null, timestamp: Date.now() };
             const postRef = doc(db, "confessions", postId);
-            await updateDoc(postRef, { comments: arrayUnion(formattedComment) });
-            input.value = ""; 
-            window.createNotification("Comment posted live!", "fa-comment");
+            try { await updateDoc(postRef, { comments: arrayUnion(commentData) }); input.value = ""; window.createNotification("Comment posted live!", "fa-comment"); } 
+            catch (error) { alert("Failed to post comment."); }
         };
 
-        window.sortFeed = function(type) {
-            document.getElementById('latestBtn').classList.remove('active');
-            document.getElementById('trendingBtn').classList.remove('active');
-            document.getElementById(type + 'Btn').classList.add('active');
-            window.currentSort = type;
-            window.renderFeed();
-        };
-
-        window.searchHashtag = function(tag) {
-            document.getElementById('searchContainer').style.display = 'block';
-            document.getElementById('searchInput').value = tag;
-            window.scrollToTop();
-            window.searchPosts(); 
-        };
-
-        window.toggleSearch = function() {
-            const searchContainer = document.getElementById('searchContainer');
-            if (searchContainer.style.display === 'block') {
-                searchContainer.style.display = 'none';
-                document.getElementById('searchInput').value = ''; 
-                window.searchPosts(); 
-            } else {
-                searchContainer.style.display = 'block';
-                document.getElementById('searchInput').focus();
-                window.scrollToTop(); 
-            }
-        };
-
+        window.sortFeed = function(type) { document.getElementById('latestBtn').classList.remove('active'); document.getElementById('trendingBtn').classList.remove('active'); document.getElementById(type + 'Btn').classList.add('active'); window.currentSort = type; window.renderFeed(); };
+        window.searchHashtag = function(tag) { document.getElementById('searchContainer').style.display = 'block'; document.getElementById('searchInput').value = tag; window.scrollToTop(); window.searchPosts(); };
+        window.toggleSearch = function() { const searchContainer = document.getElementById('searchContainer'); if (searchContainer.style.display === 'block') { searchContainer.style.display = 'none'; document.getElementById('searchInput').value = ''; window.searchPosts(); } else { searchContainer.style.display = 'block'; document.getElementById('searchInput').focus(); window.scrollToTop(); } };
         window.searchPosts = function() { window.renderFeed(); };
-        
-        window.openModal = function() { 
-            document.getElementById('postModal').style.display = 'flex'; 
-            document.getElementById('confessionInput').focus(); 
-        };
-        
-        window.closeModal = function() { 
-            document.getElementById('postModal').style.display = 'none'; 
-            window.removeImage(); 
-        };
-        
+        window.openModal = function() { if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; } document.getElementById('postModal').style.display = 'flex'; document.getElementById('confessionInput').focus(); };
+        window.closeModal = function() { document.getElementById('postModal').style.display = 'none'; window.removeImage(); };
         window.scrollToTop = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); };
-
-        window.toggleNotifications = function() {
-            const dropdown = document.getElementById('notifDropdown');
-            const badge = document.getElementById('notifBadge');
-            if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } 
-            else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; }
-        };
-
-        window.createNotification = function(message, iconName) {
-            const list = document.getElementById('notifList');
-            const emptyMsg = document.getElementById('emptyNotif');
-            const badge = document.getElementById('notifBadge');
-            if (emptyMsg) emptyMsg.remove();
-            list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`);
-            unreadNotifications++;
-            badge.innerText = unreadNotifications;
-            badge.style.display = 'flex';
-        };
-
-        window.toggleComments = function(postId) {
-            const section = document.getElementById('comments-' + postId);
-            section.style.display = section.style.display === 'block' ? 'none' : 'block';
-        };
-
-        window.shareToWhatsApp = function(encodedText) {
-            const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decodeURIComponent(encodedText)}"\n\nDownload the app to reply!`;
-            window.location.href = `whatsapp://send?text=${shareText}`;
-        };
-
+        window.toggleNotifications = function() { const dropdown = document.getElementById('notifDropdown'); const badge = document.getElementById('notifBadge'); if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } };
+        window.createNotification = function(message, iconName) { const list = document.getElementById('notifList'); const emptyMsg = document.getElementById('emptyNotif'); const badge = document.getElementById('notifBadge'); if (emptyMsg) emptyMsg.remove(); list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`); unreadNotifications++; badge.innerText = unreadNotifications; badge.style.display = 'flex'; };
+        window.toggleComments = function(postId) { const section = document.getElementById('comments-' + postId); section.style.display = section.style.display === 'block' ? 'none' : 'block'; };
+        window.shareToWhatsApp = function(encodedText) { const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decodeURIComponent(encodedText)}"\n\nDownload the app to reply!`; window.location.href = `whatsapp://send?text=${shareText}`; };
         window.reportPost = function(id) { postToReport = id; document.getElementById('reportModal').style.display = 'flex'; };
         window.closeReportModal = function() { document.getElementById('reportModal').style.display = 'none'; postToReport = null; };
+        window.submitReport = function() { const reasons = document.getElementsByName('reportReason'); let selectedReason = false; for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = true; reasons[i].checked = false; break; } } if(!selectedReason) { window.createNotification("Select a reason first", "fa-circle-exclamation"); return; } if(postToReport) { document.getElementById(postToReport).style.display = 'none'; } window.closeReportModal(); window.createNotification("Report submitted & hidden.", "fa-shield-halved"); };
 
-        window.submitReport = function() {
-            const reasons = document.getElementsByName('reportReason');
-            let selectedReason = false;
-            for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = true; reasons[i].checked = false; break; } }
-            if(!selectedReason) { window.createNotification("Select a reason first", "fa-circle-exclamation"); return; }
-            if(postToReport) { document.getElementById(postToReport).style.display = 'none'; }
-            window.closeReportModal(); 
-            window.createNotification("Report submitted & hidden.", "fa-shield-halved");
-        };
-
-        let touchstartY = 0; let touchendY = 0;
-        document.body.addEventListener('touchstart', e => { if (window.scrollY === 0) touchstartY = e.changedTouches[0].screenY; });
-        document.body.addEventListener('touchend', e => {
-            if (window.scrollY === 0) {
-                touchendY = e.changedTouches[0].screenY;
-                if (touchendY - touchstartY > 150) { 
-                    document.getElementById('ptr-spinner').style.display = 'block';
-                    setTimeout(() => location.reload(), 1000); 
-                }
-            }
-        });
     </script>
 </body>
 </html>
