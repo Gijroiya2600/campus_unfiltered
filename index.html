@@ -41,8 +41,12 @@
         .ptr-icon i { transition: transform 0.1s; }
 
         header {
-            position: sticky; top: 0; background-color: rgba(9, 9, 11, 0.85); backdrop-filter: blur(10px);
-            border-bottom: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
+            position: sticky; top: 0; 
+            background-color: rgba(9, 9, 11, 0.75); 
+            -webkit-backdrop-filter: blur(16px);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-color); 
+            padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
         }
         header h1 { font-size: 1.25rem; font-weight: bold; margin: 0; color: white; display: flex; align-items: center; }
         .header-icons { display: flex; gap: 12px; align-items: center; }
@@ -262,6 +266,11 @@
                 <button class="close-btn" onclick="window.closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="profileDetails" style="text-align: center; margin-bottom: 20px;"></div>
+            
+            <button onclick="window.requestNotificationPermission()" style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--primary); color: white; padding: 10px 16px; border-radius: 9999px; font-size: 0.85rem; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: block; width: 100%;">
+                <i class="fa-solid fa-bell"></i> Enable Push Notifications
+            </button>
+
             <h3 style="font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Confessions</h3>
             <div id="myProfilePostsList" style="margin-top: 15px;"></div>
         </div>
@@ -378,7 +387,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
+        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
+        // Fixed PWA Manifest using Data URI
         const manifestData = {
             "name": "Osgu Campus Confession",
             "short_name": "OSGU Confess",
@@ -388,8 +399,8 @@
             "theme_color": "#8b5cf6",
             "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3209/3209265.png", "sizes": "512x512", "type": "image/png" }]
         };
-        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
-        document.getElementById('pwaManifest').href = URL.createObjectURL(manifestBlob);
+        const stringManifest = JSON.stringify(manifestData);
+        document.getElementById('pwaManifest').href = 'data:application/json;charset=utf-8,' + encodeURIComponent(stringManifest);
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
@@ -404,6 +415,7 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        const messaging = getMessaging(app);
         const provider = new GoogleAuthProvider();
 
         window.currentUser = null;
@@ -457,6 +469,33 @@
             window.createNotification("Theme updated successfully!", "fa-palette");
         };
 
+        // FCM Push Notification Permission Request
+        window.requestNotificationPermission = async function() {
+            triggerHaptic(30);
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    const token = await getToken(messaging, { 
+                        vapidKey: 'YOUR_WEB_PUSH_VAPID_KEY_HERE' 
+                    });
+                    if (token) {
+                        window.createNotification("Push notifications enabled successfully!", "fa-bell");
+                    }
+                } else {
+                    alert('Notification permission denied.');
+                }
+            } catch (error) {
+                console.error('Error retrieving token: ', error);
+            }
+        };
+
+        // Foreground Message Listener
+        onMessage(messaging, (payload) => {
+            const title = payload.notification ? payload.notification.title : 'New Notification';
+            const body = payload.notification ? payload.notification.body : '';
+            window.createNotification(`${title}: ${body}`, 'fa-bell');
+        });
+
         function isUserAdmin() { return window.currentUser && window.currentUser.email === ADMIN_EMAIL; }
 
         function escapeHtml(str) {
@@ -477,17 +516,16 @@
             const stripped = text.replace(/[\s\-\(\)\+]/g, '');
             const phoneRegex = /(\b\d{10}\b)|([6-9]\d{9})/;
             if (phoneRegex.test(stripped)) {
-                return "⚠️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
+                return "⚠️️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
             }
             return null;
         }
 
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) { entry.target.classList.add('show'); } 
-                else { entry.target.classList.remove('show'); }
+                if (entry.isIntersecting) { entry.target.classList.add('show'); }
             });
-        }, { root: null, rootMargin: '0px 0px 0px 0px', threshold: 0.05 });
+        }, { root: null, rootMargin: '0px 0px 50px 0px', threshold: 0.01 });
 
         onAuthStateChanged(auth, (user) => {
             window.currentUser = user;
@@ -530,7 +568,6 @@
                     window.allPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 }
 
-                // Prevent full re-render flickering on background sync/votes/comments
                 if (isInitialLoad || fetchedPosts.length !== window.allPosts.length) {
                     window.renderFeed();
                     isInitialLoad = false;
