@@ -144,7 +144,7 @@
             100% { filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 12px #ffab1a) drop-shadow(0 0 20px #e68a00); }
         }
 
-        /* Perfectly Smooth Fluid Animation for Votes & Reactions */
+        /* Smooth Fluid Animation for Votes & Reactions */
         .smooth-scale {
             transform: scale(1.3);
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -487,7 +487,7 @@
         function checkDoxxing(text) {
             const phoneRegex = /(\b\d{10}\b)|(\+91\d{10})|(\b[6-9]\d{9}\b)/;
             if (phoneRegex.test(text)) {
-                return "⚠️️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
+                return "⚠️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
             }
             return null;
         }
@@ -503,7 +503,7 @@
             window.currentUser = user;
         });
 
-        // Optimized Feed Listener with JSON.stringify check to prevent constant re-rendering/refresh loops
+        // Smart Snapshot Handler: Re-renders ONLY if post IDs or count changed (prevents flickering on votes/reactions)
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -522,9 +522,15 @@
                     newPosts.push(data);
                 });
 
-                if (JSON.stringify(newPosts) !== JSON.stringify(window.allPosts)) {
+                const oldIds = window.allPosts.map(p => p.id).join(',');
+                const newIds = newPosts.map(p => p.id).join(',');
+
+                if (oldIds !== newIds || window.allPosts.length !== newPosts.length) {
                     window.allPosts = newPosts;
                     window.renderFeed();
+                } else {
+                    window.allPosts = newPosts;
+                    newPosts.forEach(post => updatePostCardDOM(post.id));
                 }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
@@ -773,7 +779,7 @@
                             ${imageHTML}
                             <p class="feed-text raw-text">${data.text}</p>
                             
-                            <!-- Reaction Bar with Smooth Fluid Scale -->
+                            <!-- Reaction Bar -->
                             <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
                                 <div id="react-${data.id}-lol" class="reaction-pill ${userReacted[currentUid] === 'lol' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'lol')">😂 <span>${reactions.lol || 0}</span></div>
                                 <div id="react-${data.id}-relatable" class="reaction-pill ${userReacted[currentUid] === 'relatable' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'relatable')">💀 <span>${reactions.relatable || 0}</span></div>
@@ -808,7 +814,48 @@
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
-        // Smooth Fluid Vote Animation
+        // Helper function to update a specific card's DOM in place without full page re-render
+        function updatePostCardDOM(postId) {
+            const post = window.allPosts.find(p => p.id === postId);
+            if (!post) return;
+            const cardEl = document.getElementById(postId);
+            if (!cardEl) return;
+
+            const currentUid = window.currentUser ? window.currentUser.uid : null;
+            const isUpvoted = currentUid && post.upvotedBy && post.upvotedBy.includes(currentUid);
+            const isDownvoted = currentUid && post.downvotedBy && post.downvotedBy.includes(currentUid);
+
+            const statGroup = cardEl.querySelector('.stat-group');
+            if (statGroup) {
+                const upDiv = statGroup.children[0];
+                const downDiv = statGroup.children[1];
+
+                if (upDiv) {
+                    upDiv.style.color = isUpvoted ? 'var(--primary)' : 'inherit';
+                    upDiv.querySelector('span').innerText = post.upvotes || 0;
+                }
+                if (downDiv) {
+                    downDiv.style.color = isDownvoted ? 'var(--downvote)' : 'inherit';
+                    downDiv.querySelector('span').innerText = post.downvotes || 0;
+                }
+            }
+
+            const reactions = post.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
+            const userReactions = post.userReactions || {};
+            ['lol', 'relatable', 'tea', 'wholesome'].forEach(rt => {
+                const pill = document.getElementById(`react-${postId}-${rt}`);
+                if (pill) {
+                    pill.querySelector('span').innerText = reactions[rt] || 0;
+                    if (userReactions[currentUid] === rt) {
+                        pill.classList.add('active');
+                    } else {
+                        pill.classList.remove('active');
+                    }
+                }
+            });
+        }
+
+        // Optimistic Vote with Instant DOM Update & Smooth Scale Animation
         window.vote = async function(event, postId, voteType) {
             triggerHaptic(25);
             
@@ -821,30 +868,67 @@
 
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
-            const postRef = doc(db, "confessions", postId);
             const post = window.allPosts.find(p => p.id === postId);
             if (!post) return;
 
-            const upvotedBy = post.upvotedBy || [];
-            const downvotedBy = post.downvotedBy || [];
-            const hasUpvoted = upvotedBy.includes(uid);
-            const hasDownvoted = downvotedBy.includes(uid);
+            post.upvotedBy = post.upvotedBy || [];
+            post.downvotedBy = post.downvotedBy || [];
+            const hasUpvoted = post.upvotedBy.includes(uid);
+            const hasDownvoted = post.downvotedBy.includes(uid);
 
             let updates = {};
             if (voteType === 1) { 
-                if (hasUpvoted) { updates.upvotes = increment(-1); updates.upvotedBy = arrayRemove(uid); } 
-                else { updates.upvotes = increment(1); updates.upvotedBy = arrayUnion(uid); if (hasDownvoted) { updates.downvotes = increment(-1); updates.downvotedBy = arrayRemove(uid); } }
+                if (hasUpvoted) { 
+                    post.upvotes = Math.max(0, (post.upvotes || 1) - 1); 
+                    post.upvotedBy = post.upvotedBy.filter(id => id !== uid);
+                    updates.upvotes = increment(-1); 
+                    updates.upvotedBy = arrayRemove(uid); 
+                } else { 
+                    post.upvotes = (post.upvotes || 0) + 1; 
+                    post.upvotedBy.push(uid);
+                    updates.upvotes = increment(1); 
+                    updates.upvotedBy = arrayUnion(uid); 
+                    if (hasDownvoted) { 
+                        post.downvotes = Math.max(0, (post.downvotes || 1) - 1); 
+                        post.downvotedBy = post.downvotedBy.filter(id => id !== uid);
+                        updates.downvotes = increment(-1); 
+                        updates.downvotedBy = arrayRemove(uid); 
+                    } 
+                }
             } else { 
-                if (hasDownvoted) { updates.downvotes = increment(-1); updates.downvotedBy = arrayRemove(uid); } 
-                else { updates.downvotes = increment(1); updates.downvotedBy = arrayUnion(uid); if (hasUpvoted) { updates.upvotes = increment(-1); updates.upvotedBy = arrayRemove(uid); } }
+                if (hasDownvoted) { 
+                    post.downvotes = Math.max(0, (post.downvotes || 1) - 1); 
+                    post.downvotedBy = post.downvotedBy.filter(id => id !== uid);
+                    updates.downvotes = increment(-1); 
+                    updates.downvotedBy = arrayRemove(uid); 
+                } else { 
+                    post.downvotes = (post.downvotes || 0) + 1; 
+                    post.downvotedBy.push(uid);
+                    updates.downvotes = increment(1); 
+                    updates.downvotedBy = arrayUnion(uid); 
+                    if (hasUpvoted) { 
+                        post.upvotes = Math.max(0, (post.upvotes || 1) - 1); 
+                        post.upvotedBy = post.upvotedBy.filter(id => id !== uid);
+                        updates.upvotes = increment(-1); 
+                        updates.upvotedBy = arrayRemove(uid); 
+                    } 
+                }
             }
 
+            // Instantly update DOM locally
+            updatePostCardDOM(postId);
+
             if (Object.keys(updates).length > 0) {
-                try { await updateDoc(postRef, updates); } catch (e) { alert("Failed to vote."); }
+                try {
+                    const postRef = doc(db, "confessions", postId);
+                    await updateDoc(postRef, updates);
+                } catch (e) {
+                    console.error("Failed to vote:", e);
+                }
             }
         };
 
-        // Smooth Fluid Reaction Animation
+        // Optimistic Reaction with Instant DOM Update & Smooth Scale Animation
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
 
@@ -856,25 +940,31 @@
 
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
-            const postRef = doc(db, "confessions", postId);
             const post = window.allPosts.find(p => p.id === postId);
             if (!post) return;
 
-            let reactions = post.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
-            let userReactions = post.userReactions || {};
+            post.reactions = post.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
+            post.userReactions = post.userReactions || {};
 
-            const prevReaction = userReactions[uid];
+            const prevReaction = post.userReactions[uid];
             if (prevReaction === reactionType) {
-                reactions[reactionType] = Math.max(0, (reactions[reactionType] || 1) - 1);
-                delete userReactions[uid];
+                post.reactions[reactionType] = Math.max(0, (post.reactions[reactionType] || 1) - 1);
+                delete post.userReactions[uid];
             } else {
-                if (prevReaction) { reactions[prevReaction] = Math.max(0, (reactions[prevReaction] || 1) - 1); }
-                reactions[reactionType] = (reactions[reactionType] || 0) + 1;
-                userReactions[uid] = reactionType;
+                if (prevReaction) { post.reactions[prevReaction] = Math.max(0, (post.reactions[prevReaction] || 1) - 1); }
+                post.reactions[reactionType] = (post.reactions[reactionType] || 0) + 1;
+                post.userReactions[uid] = reactionType;
             }
 
-            try { await updateDoc(postRef, { reactions: reactions, userReactions: userReactions }); } 
-            catch (e) { alert("Failed to react."); }
+            // Instantly update DOM locally
+            updatePostCardDOM(postId);
+
+            try {
+                const postRef = doc(db, "confessions", postId);
+                await updateDoc(postRef, { reactions: post.reactions, userReactions: post.userReactions });
+            } catch (e) {
+                console.error("Failed to react:", e);
+            }
         };
 
         window.deletePost = async function(postId) {
