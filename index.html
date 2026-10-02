@@ -72,7 +72,6 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* 🔥 SMOOTH BLUR REVEAL EFFECT 🔥 */
         .card-reveal-wrapper {
             opacity: 0;
             transform: translateY(25px) scale(0.97);
@@ -181,6 +180,20 @@
         </div>
     </div>
 
+    <!-- Admin Moderation Panel Modal -->
+    <div id="adminModal" class="modal-overlay">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2>🛡️ Admin Moderation Panel</h2>
+                <button class="close-btn" onclick="window.closeAdminModal()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Review flagged confessions and take action.</p>
+            <div id="reportedPostsList" style="max-height: 60vh; overflow-y: auto;">
+                <div style="text-align: center; color: var(--text-muted); padding: 20px;">Loading flagged posts...</div>
+            </div>
+        </div>
+    </div>
+
     <!-- Professional Login Prompt Modal -->
     <div id="loginPromptModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 380px; text-align: center; padding: 30px 20px;">
@@ -278,6 +291,8 @@
         let unreadNotifications = 0;
         let postToReport = null;
         window.currentImageBase64 = null;
+        
+        const ADMIN_EMAIL = "klak50506@gmail.com";
 
         /* --- STABLE OBSERVER FOR REPEATING BLUR REVEAL --- */
         window.cardObserver = new IntersectionObserver((entries) => {
@@ -338,10 +353,17 @@
         window.openProfileModal = function() {
             const user = window.currentUser;
             const detailsDiv = document.getElementById('profileDetails');
+            
+            let adminBtnHTML = "";
+            if (user && user.email === ADMIN_EMAIL) {
+                adminBtnHTML = `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>`;
+            }
+
             detailsDiv.innerHTML = `
                 <img src="${user.photoURL}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
                 <h3 style="margin: 0; color: white;">${user.displayName}</h3>
                 <p style="margin: 5px 0 15px 0; font-size: 0.8rem; color: var(--text-muted);">${user.email}</p>
+                ${adminBtnHTML}
                 <button onclick="window.logoutUser()" style="background: var(--downvote); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Logout</button>
             `;
 
@@ -367,6 +389,66 @@
 
         window.closeProfileModal = function() {
             document.getElementById('profileModal').style.display = 'none';
+        };
+
+        // Admin Panel Functions
+        window.openAdminModal = function() {
+            window.closeProfileModal();
+            document.getElementById('adminModal').style.display = 'flex';
+            
+            const listContainer = document.getElementById('reportedPostsList');
+            listContainer.innerHTML = "";
+            
+            const flaggedPosts = window.allPosts.filter(p => p.isFlagged && p.reports && p.reports.length > 0);
+            
+            if (flaggedPosts.length === 0) {
+                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending reports to review! 🎉</p>';
+                return;
+            }
+
+            flaggedPosts.forEach(p => {
+                let reasonsSummary = p.reports.map(r => `• <b>${r.reason}</b> (by ${r.email || 'User'})`).join('<br>');
+                listContainer.insertAdjacentHTML('beforeend', `
+                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; margin-bottom: 12px;">
+                        <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 0.9rem;"><b>Confession:</b> ${p.text}</p>
+                        <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: var(--downvote);"><b>Reports (${p.reports.length}):</b><br>${reasonsSummary}</p>
+                        <div style="display: flex; gap: 10px;">
+                            <button onclick="window.adminDeletePost('${p.id}')" style="background: var(--downvote); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Delete Permanently</button>
+                            <button onclick="window.dismissReport('${p.id}')" style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-check"></i> Dismiss Report</button>
+                        </div>
+                    </div>
+                `);
+            });
+        };
+
+        window.closeAdminModal = function() {
+            document.getElementById('adminModal').style.display = 'none';
+        };
+
+        window.adminDeletePost = async function(postId) {
+            if (confirm("Are you sure you want to permanently delete this post?")) {
+                try {
+                    await deleteDoc(doc(db, "confessions", postId));
+                    window.createNotification("Post deleted permanently by admin.", "fa-trash");
+                    window.openAdminModal(); 
+                } catch (e) {
+                    alert("Error deleting post.");
+                }
+            }
+        };
+
+        window.dismissReport = async function(postId) {
+            try {
+                const postRef = doc(db, "confessions", postId);
+                await updateDoc(postRef, {
+                    reports: [],
+                    isFlagged: false
+                });
+                window.createNotification("Report dismissed. Post restored to feed.", "fa-circle-check");
+                window.openAdminModal(); 
+            } catch (e) {
+                alert("Error dismissing report.");
+            }
         };
 
         const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(25));
@@ -397,6 +479,13 @@
             }
 
             displayPosts.forEach((data) => {
+                const currentUid = window.currentUser ? window.currentUser.uid : null;
+                
+                // Hide if reported by current user
+                if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
+                // Hide if globally flagged pending review
+                if (data.isFlagged && data.reports && data.reports.length > 0) return;
+
                 if (searchQuery && !data.text.toLowerCase().includes(searchQuery)) return;
 
                 const diff = Date.now() - data.timestamp;
@@ -432,7 +521,6 @@
                 const isMyPost = myPosts.includes(data.id) || (window.currentUser && data.uid === window.currentUser.uid);
                 const deleteBtnHTML = isMyPost ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
-                const currentUid = window.currentUser ? window.currentUser.uid : null;
                 const isUpvoted = currentUid && data.upvotedBy && data.upvotedBy.includes(currentUid);
                 const isDownvoted = currentUid && data.downvotedBy && data.downvotedBy.includes(currentUid);
                 
@@ -480,7 +568,6 @@
                 `);
             });
 
-            // Sabhi naye cards par observer attach kiya gaya hai taaki scroll karte waqt har baar animation chale
             const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
@@ -615,10 +702,54 @@
         window.toggleNotifications = function() { const dropdown = document.getElementById('notifDropdown'); const badge = document.getElementById('notifBadge'); if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } };
         window.createNotification = function(message, iconName) { const list = document.getElementById('notifList'); const emptyMsg = document.getElementById('emptyNotif'); const badge = document.getElementById('notifBadge'); if (emptyMsg) emptyMsg.remove(); list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`); unreadNotifications++; badge.innerText = unreadNotifications; badge.style.display = 'flex'; };
         window.toggleComments = function(postId) { const section = document.getElementById('comments-' + postId); section.style.display = section.style.display === 'block' ? 'none' : 'block'; };
-        window.shareToWhatsApp = function(encodedText) { const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decodeURIComponent(encodedText)}"\n\nDownload the app to reply!`; window.location.href = `whatsapp://send?text=${shareText}`; };
+        
+        window.shareToWhatsApp = function(encodedText) { 
+            const decoded = decodeURIComponent(encodedText);
+            const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decoded}"\n\nDownload the app to reply!`; 
+            window.location.href = `whatsapp://send?text=${encodeURIComponent(shareText)}`; 
+        };
+
         window.reportPost = function(id) { postToReport = id; document.getElementById('reportModal').style.display = 'flex'; };
         window.closeReportModal = function() { document.getElementById('reportModal').style.display = 'none'; postToReport = null; };
-        window.submitReport = function() { const reasons = document.getElementsByName('reportReason'); let selectedReason = false; for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = true; reasons[i].checked = false; break; } } if(!selectedReason) { window.createNotification("Select a reason first", "fa-circle-exclamation"); return; } if(postToReport) { document.getElementById(postToReport).style.display = 'none'; } window.closeReportModal(); window.createNotification("Report submitted & hidden.", "fa-shield-halved"); };
+        
+        window.submitReport = async function() { 
+            const reasons = document.getElementsByName('reportReason'); 
+            let selectedReason = ""; 
+            for(let i=0; i<reasons.length; i++) { 
+                if(reasons[i].checked) { 
+                    selectedReason = reasons[i].value; 
+                    reasons[i].checked = false; 
+                    break; 
+                } 
+            } 
+            if(!selectedReason) { 
+                window.createNotification("Select a reason first", "fa-circle-exclamation"); 
+                return; 
+            } 
+            
+            if (postToReport) {
+                if (!window.currentUser) {
+                    document.getElementById('loginPromptModal').style.display = 'flex';
+                    return;
+                }
+                try {
+                    const postRef = doc(db, "confessions", postToReport);
+                    await updateDoc(postRef, {
+                        reports: arrayUnion({
+                            uid: window.currentUser.uid,
+                            email: window.currentUser.email,
+                            reason: selectedReason,
+                            timestamp: Date.now()
+                        }),
+                        isFlagged: true
+                    });
+                    window.createNotification("Report submitted & sent to admin.", "fa-shield-halved");
+                } catch (error) {
+                    alert("Failed to submit report.");
+                }
+            }
+            window.closeReportModal(); 
+        };
 
         /* --- PULL TO REFRESH ENGINE --- */
         const ptrContainer = document.getElementById('custom-ptr');
