@@ -270,7 +270,7 @@
     <div id="adminModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
-                <h2>🛡️ Admin Moderation Panel</h2>
+                <h2>🛡️️ Admin Moderation Panel</h2>
                 <button class="close-btn" onclick="window.closeAdminModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 15px;">Review flagged confessions and take action.</p>
@@ -539,7 +539,6 @@
             });
         };
 
-        // --- UPGRADED: Cursor-based pagination using startAfter ---
         window.loadMorePosts = async function() {
             if (isLoadingMore || !hasMorePosts || !lastVisibleDoc) return;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
@@ -788,7 +787,6 @@
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
                 const postAdminBadge = (data.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
 
-                // --- UPGRADED: Safe data-tag attribute parsing for hashtags ---
                 const safeParsedText = escapeHtml(data.text).replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' data-tag='$2' onclick='window.searchHashtag(this.dataset.tag)'>$2</span>");
 
                 feed.insertAdjacentHTML('beforeend', `
@@ -843,6 +841,7 @@
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
+        // --- FIXED: Real-time comment updates & DOM synchronization ---
         function updatePostCardDOM(postId) {
             const post = window.allPosts.find(p => p.id === postId);
             if (!post) return;
@@ -857,6 +856,7 @@
             if (statGroup) {
                 const upDiv = statGroup.children[0];
                 const downDiv = statGroup.children[1];
+                const commentCountSpan = statGroup.children[2].querySelector('span');
 
                 if (upDiv) {
                     upDiv.style.color = isUpvoted ? 'var(--primary)' : 'inherit';
@@ -865,6 +865,9 @@
                 if (downDiv) {
                     downDiv.style.color = isDownvoted ? 'var(--downvote)' : 'inherit';
                     downDiv.querySelector('span').innerText = post.downvotes || 0;
+                }
+                if (commentCountSpan) {
+                    commentCountSpan.innerText = post.comments ? post.comments.length : 0;
                 }
             }
 
@@ -881,6 +884,25 @@
                     }
                 }
             });
+
+            // Update comments list live
+            const commentsListEl = cardEl.querySelector('.comments-list');
+            if (commentsListEl && post.comments) {
+                let commentsHTML = "";
+                post.comments.forEach(c => {
+                    const cName = escapeHtml(c.userName) || "Anonymous Student";
+                    const cAvatar = c.userPhoto ? `<img src="${c.userPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
+                    const cAdminBadge = (c.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
+                    const safeCommentText = escapeHtml(c.text);
+                    commentsHTML += `
+                        <div class="comment-item">
+                            <div class="comment-meta">${cAvatar} <span style="color: var(--primary);">${cName}</span>${cAdminBadge}</div>
+                            <div style="margin-top: 4px;">${safeCommentText}</div>
+                        </div>
+                    `;
+                });
+                commentsListEl.innerHTML = commentsHTML;
+            }
         }
 
         window.vote = async function(event, postId, voteType) {
