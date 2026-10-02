@@ -51,6 +51,7 @@
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .user-block { display: flex; align-items: center; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); overflow: hidden; }
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-info h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: white; }
         .user-info p { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
         .report-btn { color: var(--text-muted); background: none; border: none; cursor: pointer; transition: 0.2s; font-size: 1rem; }
@@ -142,7 +143,7 @@
         </div>
     </div>
 
-    <!-- NEW: Professional Login Prompt Modal (Instead of Alert) -->
+    <!-- Professional Login Prompt Modal -->
     <div id="loginPromptModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 380px; text-align: center; padding: 30px 20px;">
             <div style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-user-shield"></i></div>
@@ -256,7 +257,8 @@
                 await signInWithPopup(auth, provider);
                 window.createNotification("Logged in successfully!", "fa-check");
             } catch (error) {
-                alert("Login failed: " + error.message);
+                alert("Login Error: " + error.code + " - " + error.message);
+                console.error(error);
             }
         };
 
@@ -370,13 +372,17 @@
                 const upColor = isUpvoted ? 'var(--primary)' : 'inherit';
                 const downColor = isDownvoted ? 'var(--downvote)' : 'inherit';
 
+                // NAYA: Post par logged-in user ka naam aur photo display karna
+                const authorName = data.userName || "Anonymous Student";
+                const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
+
                 feed.insertAdjacentHTML('beforeend', `
                 <div class="card post-item" id="${data.id}">
                     <div class="feed-header">
                         <div class="user-block">
-                            <div class="avatar">👻</div>
+                            <div class="avatar">${authorAvatar}</div>
                             <div class="user-info">
-                                <h3>Anonymous Student</h3>
+                                <h3>${authorName}</h3>
                                 <p>${timeStr}</p>
                             </div>
                         </div>
@@ -562,6 +568,7 @@
                                       .replace(/(^|\s)(#[a-z\d-]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
 
             try {
+                // NAYA: Post ke sath user ka naam aur photo bhi save karo
                 const docRef = await addDoc(collection(db, "confessions"), {
                     text: formattedText,
                     imageUrl: window.currentImageBase64, 
@@ -569,7 +576,9 @@
                     downvotes: 0,
                     comments: [],
                     timestamp: Date.now(),
-                    uid: window.currentUser ? window.currentUser.uid : "anonymous"
+                    uid: window.currentUser ? window.currentUser.uid : "anonymous",
+                    userName: window.currentUser ? window.currentUser.displayName : "Anonymous Student",
+                    userPhoto: window.currentUser ? window.currentUser.photoURL : null
                 });
                 
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
