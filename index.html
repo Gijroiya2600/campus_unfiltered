@@ -294,6 +294,12 @@
         
         const ADMIN_EMAIL = "klak50506@gmail.com";
 
+        // HTML Escape Helper to prevent XSS vulnerability in user names
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
         /* --- STABLE OBSERVER FOR REPEATING BLUR REVEAL --- */
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
@@ -313,7 +319,7 @@
             window.currentUser = user;
             const authContainer = document.getElementById('authContainer');
             if (user) {
-                authContainer.innerHTML = `<img src="${user.photoURL || 'https://via.placeholder.com/32'}" class="user-profile-icon" title="${user.displayName}" onclick="window.handleProfileClick()">`;
+                authContainer.innerHTML = `<img src="${user.photoURL || 'https://via.placeholder.com/32'}" class="user-profile-icon" title="${escapeHtml(user.displayName)}" onclick="window.handleProfileClick()">`;
             } else {
                 authContainer.innerHTML = `<button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>`;
             }
@@ -361,8 +367,8 @@
 
             detailsDiv.innerHTML = `
                 <img src="${user.photoURL}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
-                <h3 style="margin: 0; color: white;">${user.displayName}</h3>
-                <p style="margin: 5px 0 15px 0; font-size: 0.8rem; color: var(--text-muted);">${user.email}</p>
+                <h3 style="margin: 0; color: white;">${escapeHtml(user.displayName)}</h3>
+                <p style="margin: 5px 0 15px 0; font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(user.email)}</p>
                 ${adminBtnHTML}
                 <button onclick="window.logoutUser()" style="background: var(--downvote); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Logout</button>
             `;
@@ -391,7 +397,7 @@
             document.getElementById('profileModal').style.display = 'none';
         };
 
-        // Admin Panel Functions
+        // Admin Panel Functions (Fixed race condition with local array syncing)
         window.openAdminModal = function() {
             window.closeProfileModal();
             document.getElementById('adminModal').style.display = 'flex';
@@ -407,7 +413,7 @@
             }
 
             flaggedPosts.forEach(p => {
-                let reasonsSummary = p.reports.map(r => `• <b>${r.reason}</b> (by ${r.email || 'User'})`).join('<br>');
+                let reasonsSummary = p.reports.map(r => `• <b>${escapeHtml(r.reason)}</b> (by ${escapeHtml(r.email || 'User')})`).join('<br>');
                 listContainer.insertAdjacentHTML('beforeend', `
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; margin-bottom: 12px;">
                         <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 0.9rem;"><b>Confession:</b> ${p.text}</p>
@@ -429,6 +435,7 @@
             if (confirm("Are you sure you want to permanently delete this post?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
+                    window.allPosts = window.allPosts.filter(p => p.id !== postId);
                     window.createNotification("Post deleted permanently by admin.", "fa-trash");
                     window.openAdminModal(); 
                 } catch (e) {
@@ -444,6 +451,11 @@
                     reports: [],
                     isFlagged: false
                 });
+                const post = window.allPosts.find(p => p.id === postId);
+                if (post) {
+                    post.reports = [];
+                    post.isFlagged = false;
+                }
                 window.createNotification("Report dismissed. Post restored to feed.", "fa-circle-check");
                 window.openAdminModal(); 
             } catch (e) {
@@ -481,9 +493,7 @@
             displayPosts.forEach((data) => {
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
-                // Hide if reported by current user
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
-                // Hide if globally flagged pending review
                 if (data.isFlagged && data.reports && data.reports.length > 0) return;
 
                 if (searchQuery && !data.text.toLowerCase().includes(searchQuery)) return;
@@ -499,9 +509,9 @@
                 if(data.comments) {
                     data.comments.forEach(c => {
                         if (typeof c === 'string') {
-                            commentsHTML += `<div class="comment-item"><div class="comment-meta" style="color: var(--primary);">Anonymous 👻</div>${c}</div>`;
+                            commentsHTML += `<div class="comment-item"><div class="comment-meta" style="color: var(--primary);">Anonymous 👻</div>${escapeHtml(c)}</div>`;
                         } else {
-                            const cName = c.userName || "Anonymous Student";
+                            const cName = escapeHtml(c.userName) || "Anonymous Student";
                             const cAvatar = c.userPhoto ? `<img src="${c.userPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
                             
                             commentsHTML += `
@@ -527,7 +537,7 @@
                 const upColor = isUpvoted ? 'var(--primary)' : 'inherit';
                 const downColor = isDownvoted ? 'var(--downvote)' : 'inherit';
 
-                const authorName = data.userName || "Anonymous Student";
+                const authorName = escapeHtml(data.userName) || "Anonymous Student";
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
 
                 feed.insertAdjacentHTML('beforeend', `
