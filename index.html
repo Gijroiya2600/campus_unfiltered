@@ -83,7 +83,6 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* Optimized Smooth Fade-In (No Heavy Blur) */
         .card-reveal-wrapper {
             opacity: 0; transform: translateY(15px);
             transition: opacity 0.3s ease-out, transform 0.3s ease-out;
@@ -96,7 +95,6 @@
             border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
         }
         
-        /* Skeleton Loaders */
         @keyframes shimmer {
             0% { background-position: -200px 0; }
             100% { background-position: calc(200px + 100%) 0; }
@@ -132,7 +130,6 @@
         .feed-stats div { cursor: pointer; display: flex; align-items: center; }
         .feed-stats i { margin-right: 5px; }
         
-        /* Royal Neon Crown Glow Animation */
         .neon-crown {
             width: 20px;
             height: 16px;
@@ -145,7 +142,6 @@
             100% { filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 12px #ffab1a) drop-shadow(0 0 20px #e68a00); }
         }
 
-        /* Smooth Fluid Animation for Votes & Reactions */
         .smooth-scale {
             transform: scale(1.2);
             transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
@@ -162,7 +158,6 @@
 
         .share-btn:hover { color: var(--whatsapp); }
         
-        /* Smooth Comment Accordion Slide */
         .comments-section {
             max-height: 0;
             overflow: hidden;
@@ -243,7 +238,6 @@
         <div id="notifList" class="notif-list"><div class="notif-item text-muted" id="emptyNotif">No new notifications</div></div>
     </div>
 
-    <!-- Theme Picker Modal -->
     <div id="themeModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 350px; text-align: center;">
             <div class="modal-header">
@@ -261,7 +255,6 @@
         </div>
     </div>
 
-    <!-- Profile Dashboard Modal -->
     <div id="profileModal" class="modal-overlay">
         <div class="modal-content">
             <div class="modal-header">
@@ -274,7 +267,6 @@
         </div>
     </div>
 
-    <!-- Admin Moderation Panel Modal -->
     <div id="adminModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 600px;">
             <div class="modal-header">
@@ -288,7 +280,6 @@
         </div>
     </div>
 
-    <!-- Professional Login Prompt Modal -->
     <div id="loginPromptModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 380px; text-align: center; padding: 30px 20px;">
             <div style="font-size: 3rem; color: var(--primary); margin-bottom: 15px;"><i class="fa-solid fa-user-shield"></i></div>
@@ -351,7 +342,6 @@
             <div><b>Campus Notice:</b> Keep confessions respectful. Avoid targeting specific individuals. Stay anonymous & safe! 🎉</div>
         </div>
 
-        <!-- Hashtag Discovery Pills -->
         <div class="hashtag-pills">
             <div class="pill active" onclick="window.filterByTag('all', this)">🔥 All</div>
             <div class="pill" onclick="window.filterByTag('#hostel', this)">🏠 #hostel</div>
@@ -367,7 +357,6 @@
         </div>
         
         <div id="feed">
-            <!-- Skeleton Loaders Initial State -->
             <div class="skeleton-card"></div>
             <div class="skeleton-card"></div>
             <div class="skeleton-card"></div>
@@ -385,7 +374,6 @@
         <div class="nav-item" onclick="window.handleProfileClick()"><i class="fa-regular fa-user"></i></div>
     </nav>
 
-    <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
@@ -434,7 +422,6 @@
         const ADMIN_EMAIL = "klak50506@gmail.com";
         const BAD_WORDS = ["gali1", "gali2"]; 
 
-        // Royal Neon Crown SVG Template for Admin
         const crownSVG = `<svg class="neon-crown" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
             <defs>
                 <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
@@ -485,9 +472,11 @@
             return cleanText;
         }
 
+        // --- FIXED: Hardened Anti-Doxxing filter that strips whitespace & punctuation ---
         function checkDoxxing(text) {
-            const phoneRegex = /(\b\d{10}\b)|(\+91\d{10})|(\b[6-9]\d{9}\b)/;
-            if (phoneRegex.test(text)) {
+            const stripped = text.replace(/[\s\-\(\)\+]/g, '');
+            const phoneRegex = /(\b\d{10}\b)|([6-9]\d{9})/;
+            if (phoneRegex.test(stripped)) {
                 return "⚠️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
             }
             return null;
@@ -504,7 +493,6 @@
             window.currentUser = user;
         });
 
-        // Smart Snapshot Handler: Re-renders ONLY if post IDs or count changed (prevents flickering on votes/reactions)
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -648,7 +636,7 @@
                 let reasonsSummary = p.reports.map(r => `• <b>${escapeHtml(r.reason)}</b> (by ${escapeHtml(r.email || 'User')})`).join('<br>');
                 listContainer.insertAdjacentHTML('beforeend', `
                     <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; margin-bottom: 12px;">
-                        <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 0.9rem;"><b>Confession:</b> ${p.text}</p>
+                        <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 0.9rem;"><b>Confession:</b> ${escapeHtml(p.text)}</p>
                         <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: var(--downvote);"><b>Reports (${p.reports.length}):</b><br>${reasonsSummary}</p>
                         <div style="display: flex; gap: 10px;">
                             <button onclick="window.adminDeletePost('${p.id}')" style="background: var(--downvote); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Delete Permanently</button>
@@ -727,10 +715,11 @@
                         const cName = escapeHtml(c.userName) || "Anonymous Student";
                         const cAvatar = c.userPhoto ? `<img src="${c.userPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
                         const cAdminBadge = (c.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
+                        const safeCommentText = escapeHtml(c.text);
                         commentsHTML += `
                             <div class="comment-item">
                                 <div class="comment-meta">${cAvatar} <span style="color: var(--primary);">${cName}</span>${cAdminBadge}</div>
-                                <div style="margin-top: 4px;">${escapeHtml(c.text)}</div>
+                                <div style="margin-top: 4px;">${safeCommentText}</div>
                             </div>
                         `;
                     });
@@ -761,6 +750,9 @@
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
                 const postAdminBadge = (data.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
 
+                // --- FIXED: Dynamically escape text and parse hashtags on render (preventing stored XSS) ---
+                const safeParsedText = escapeHtml(data.text).replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
+
                 feed.insertAdjacentHTML('beforeend', `
                     <div class="card-reveal-wrapper">
                         <div class="card post-item" id="${data.id}">
@@ -778,9 +770,8 @@
                                 </div>
                             </div>
                             ${imageHTML}
-                            <p class="feed-text raw-text">${data.text}</p>
+                            <p class="feed-text raw-text">${safeParsedText}</p>
                             
-                            <!-- Reaction Bar -->
                             <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
                                 <div id="react-${data.id}-lol" class="reaction-pill ${userReacted[currentUid] === 'lol' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'lol')">😂 <span>${reactions.lol || 0}</span></div>
                                 <div id="react-${data.id}-relatable" class="reaction-pill ${userReacted[currentUid] === 'relatable' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'relatable')">💀 <span>${reactions.relatable || 0}</span></div>
@@ -798,7 +789,6 @@
                                     <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
                                 </div>
                             </div>
-                            <!-- Smooth Comment Accordion Section -->
                             <div class="comments-section" id="comments-${data.id}">
                                 <div class="comment-input-area">
                                     <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
@@ -815,7 +805,6 @@
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
-        // Helper function to update a specific card's DOM in place without full page re-render
         function updatePostCardDOM(postId) {
             const post = window.allPosts.find(p => p.id === postId);
             if (!post) return;
@@ -856,7 +845,6 @@
             });
         }
 
-        // Optimistic Vote with Instant DOM Update & Smooth Scale Animation
         window.vote = async function(event, postId, voteType) {
             triggerHaptic(25);
             
@@ -928,7 +916,6 @@
             }
         };
 
-        // Optimistic Reaction with Instant DOM Update & Smooth Scale Animation
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
 
@@ -1028,6 +1015,7 @@
             document.getElementById('mediaUpload').value = ""; 
         };
 
+        // --- FIXED: Storing clean plain text in DB instead of pre-rendered HTML ---
         window.postConfession = async function() {
             triggerHaptic(30);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
@@ -1043,12 +1031,11 @@
             text = filterProfanity(text);
 
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...'; btn.disabled = true;
-            const formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
             
             try {
                 const expiresAtTimestamp = isDisappearing ? Date.now() + (24 * 60 * 60 * 1000) : null;
                 const docRef = await addDoc(collection(db, "confessions"), {
-                    text: formattedText, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
+                    text: text, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
                     reactions: { lol: 0, relatable: 0, tea: 0, wholesome: 0 }, userReactions: {},
                     reports: [], isFlagged: false, expiresAt: expiresAtTimestamp,
                     timestamp: Date.now(), uid: window.currentUser.uid, email: window.currentUser.email, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
@@ -1069,10 +1056,9 @@
             if (doxxingWarning) { alert(doxxingWarning); return; }
 
             text = filterProfanity(text);
-            const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             
             const commentData = { 
-                text: formattedCommentText, 
+                text: text, 
                 uid: window.currentUser.uid, 
                 email: window.currentUser.email,
                 userName: window.currentUser.displayName || "Anonymous Student", 
@@ -1170,7 +1156,6 @@
             window.closeReportModal(); 
         };
 
-        /* --- PULL TO REFRESH ENGINE --- */
         const ptrContainer = document.getElementById('custom-ptr');
         const ptrIcon = ptrContainer.querySelector('i');
         let ptrStartY = 0, ptrCurrentY = 0, isPulling = false, isRefreshing = false;
