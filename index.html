@@ -87,9 +87,10 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
+        /* Restored Smooth Card Scroll Animation */
         .card-reveal-wrapper {
-            opacity: 0; transform: translateY(15px);
-            transition: opacity 0.3s ease-out, transform 0.3s ease-out;
+            opacity: 0; transform: translateY(25px);
+            transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
             will-change: transform, opacity; margin-bottom: 24px;
         }
         .card-reveal-wrapper.show { opacity: 1; transform: translateY(0); }
@@ -389,7 +390,7 @@
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
         import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
-        // Fixed PWA Manifest using Data URI
+        // PWA Data URI Manifest
         const manifestData = {
             "name": "Osgu Campus Confession",
             "short_name": "OSGU Confess",
@@ -469,7 +470,7 @@
             window.createNotification("Theme updated successfully!", "fa-palette");
         };
 
-        // FCM Push Notification Permission Request
+        // FCM Notifications
         window.requestNotificationPermission = async function() {
             triggerHaptic(30);
             try {
@@ -489,7 +490,6 @@
             }
         };
 
-        // Foreground Message Listener
         onMessage(messaging, (payload) => {
             const title = payload.notification ? payload.notification.title : 'New Notification';
             const body = payload.notification ? payload.notification.body : '';
@@ -516,16 +516,21 @@
             const stripped = text.replace(/[\s\-\(\)\+]/g, '');
             const phoneRegex = /(\b\d{10}\b)|([6-9]\d{9})/;
             if (phoneRegex.test(stripped)) {
-                return "⚠️️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
+                return "⚠️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
             }
             return null;
         }
 
+        // Restored fully functioning Card Observer with scroll reveal & hide animation toggle
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) { entry.target.classList.add('show'); }
+                if (entry.isIntersecting) { 
+                    entry.target.classList.add('show'); 
+                } else { 
+                    entry.target.classList.remove('show'); 
+                }
             });
-        }, { root: null, rootMargin: '0px 0px 50px 0px', threshold: 0.01 });
+        }, { root: null, rootMargin: '0px 0px -30px 0px', threshold: 0.05 });
 
         onAuthStateChanged(auth, (user) => {
             window.currentUser = user;
