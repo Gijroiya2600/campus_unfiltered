@@ -10,16 +10,37 @@
             --bg-color: #09090b; --card-bg: #18181b; --primary: #8b5cf6;
             --text-main: #f3f4f6; --text-muted: #9ca3af; --border-color: #27272a;
             --downvote: #ef4444; --notif-badge: #ef4444; --whatsapp: #25D366;
-            --scroll-skew: 0deg;
-            --scroll-scale: 1;
         }
         body {
             background-color: var(--bg-color); color: var(--text-main);
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
             margin: 0; padding: 0; line-height: 1.5; padding-bottom: 70px; overscroll-behavior-y: contain; 
-            overflow-x: hidden; 
+            overflow-x: hidden;
         }
-        #ptr-spinner { text-align: center; padding: 15px; color: var(--primary); font-size: 1.5rem; display: none; background: var(--bg-color); }
+        
+        #custom-ptr {
+            position: fixed;
+            top: -45px; 
+            left: 50%;
+            transform: translateX(-50%) translateY(0);
+            width: 32px; 
+            height: 32px; 
+            background: var(--card-bg);
+            border: 2px solid var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 10px rgba(139, 92, 246, 0.3);
+            z-index: 1000;
+            color: var(--primary);
+            font-size: 0.9rem;
+            will-change: transform;
+        }
+        .ptr-icon i {
+            transition: transform 0.1s;
+        }
+
         header {
             position: sticky; top: 0; background-color: rgba(9, 9, 11, 0.85); backdrop-filter: blur(10px);
             border-bottom: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
@@ -51,11 +72,12 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
+        /* 🔥 SMOOTH BLUR REVEAL EFFECT 🔥 */
         .card-reveal-wrapper {
             opacity: 0;
-            transform: translateY(80px) scale(0.9);
-            filter: blur(5px);
-            transition: all 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform: translateY(25px) scale(0.97);
+            filter: blur(3px);
+            transition: opacity 0.4s ease-out, transform 0.4s cubic-bezier(0.1, 0.8, 0.2, 1), filter 0.4s ease-out;
             will-change: transform, opacity, filter;
             margin-bottom: 24px;
         }
@@ -67,11 +89,8 @@
 
         .card { 
             background-color: var(--card-bg); border: 1px solid var(--border-color); 
-            border-radius: 16px; padding: 16px; 
+            border-radius: 16px; padding: 16px;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
-            transform: skewY(var(--scroll-skew)) scaleY(var(--scroll-scale));
-            transition: transform 0.15s ease-out; 
-            will-change: transform;
         }
         
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
@@ -118,7 +137,9 @@
 </head>
 <body>
 
-    <div id="ptr-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Refreshing...</div>
+    <div id="custom-ptr">
+        <div class="ptr-icon"><i class="fa-solid fa-arrow-rotate-right"></i></div>
+    </div>
 
     <header>
         <div style="max-width: 600px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
@@ -258,7 +279,7 @@
         let postToReport = null;
         window.currentImageBase64 = null;
 
-        /* --- Intersection Observer (For Scroll Reveal) --- */
+        /* --- STABLE OBSERVER FOR REPEATING BLUR REVEAL --- */
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -269,41 +290,8 @@
             });
         }, {
             root: null,
-            rootMargin: '0px 0px -40px 0px', 
-            threshold: 0
-        });
-
-        /* --- Velocity Scroll Logic (For Skew & Stretch) --- */
-        let lastScrollY = window.scrollY;
-        let scrollTicking = false;
-        let scrollResetTimeout;
-
-        window.addEventListener('scroll', () => {
-            if (!scrollTicking) {
-                window.requestAnimationFrame(() => {
-                    const currentScrollY = window.scrollY;
-                    const velocity = currentScrollY - lastScrollY;
-                    lastScrollY = currentScrollY;
-
-                    let skew = velocity * 0.035; 
-                    skew = Math.max(-3.5, Math.min(3.5, skew));
-                    
-                    let stretch = 1 + Math.abs(velocity * 0.0008);
-                    stretch = Math.min(1.03, stretch); 
-
-                    document.documentElement.style.setProperty('--scroll-skew', `${skew}deg`);
-                    document.documentElement.style.setProperty('--scroll-scale', `${stretch}`);
-
-                    clearTimeout(scrollResetTimeout);
-                    scrollResetTimeout = setTimeout(() => {
-                        document.documentElement.style.setProperty('--scroll-skew', `0deg`);
-                        document.documentElement.style.setProperty('--scroll-scale', `1`);
-                    }, 120);
-
-                    scrollTicking = false;
-                });
-                scrollTicking = true;
-            }
+            rootMargin: '0px 0px 0px 0px', 
+            threshold: 0.05
         });
 
         onAuthStateChanged(auth, (user) => {
@@ -381,7 +369,7 @@
             document.getElementById('profileModal').style.display = 'none';
         };
 
-        const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(15));
+        const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(25));
         
         onSnapshot(q, (snapshot) => {
             window.allPosts = [];
@@ -408,7 +396,7 @@
                 return;
             }
 
-            displayPosts.forEach(data => {
+            displayPosts.forEach((data) => {
                 if (searchQuery && !data.text.toLowerCase().includes(searchQuery)) return;
 
                 const diff = Date.now() - data.timestamp;
@@ -455,43 +443,44 @@
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
 
                 feed.insertAdjacentHTML('beforeend', `
-                <div class="card-reveal-wrapper">
-                    <div class="card post-item" id="${data.id}">
-                        <div class="feed-header">
-                            <div class="user-block">
-                                <div class="avatar">${authorAvatar}</div>
-                                <div class="user-info">
-                                    <h3>${authorName}</h3>
-                                    <p>${timeStr}</p>
+                    <div class="card-reveal-wrapper">
+                        <div class="card post-item" id="${data.id}">
+                            <div class="feed-header">
+                                <div class="user-block">
+                                    <div class="avatar">${authorAvatar}</div>
+                                    <div class="user-info">
+                                        <h3>${authorName}</h3>
+                                        <p>${timeStr}</p>
+                                    </div>
+                                </div>
+                                <div>
+                                    ${deleteBtnHTML}
+                                    <button class="report-btn" onclick="window.reportPost('${data.id}')"><i class="fa-regular fa-flag"></i></button>
                                 </div>
                             </div>
-                            <div>
-                                ${deleteBtnHTML}
-                                <button class="report-btn" onclick="window.reportPost('${data.id}')"><i class="fa-regular fa-flag"></i></button>
+                            ${imageHTML}
+                            <p class="feed-text raw-text">${data.text}</p>
+                            <div class="feed-stats">
+                                <div class="stat-group">
+                                    <div onclick="window.vote('${data.id}', 1)" class="upvote-btn" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span class="vote-count">${data.upvotes}</span></div>
+                                    <div onclick="window.vote('${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
+                                    <div onclick="window.toggleComments('${data.id}')"><i class="fa-regular fa-comment"></i> <span>${data.comments ? data.comments.length : 0}</span></div>
+                                </div>
+                                <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
                             </div>
-                        </div>
-                        ${imageHTML}
-                        <p class="feed-text raw-text">${data.text}</p>
-                        <div class="feed-stats">
-                            <div class="stat-group">
-                                <div onclick="window.vote('${data.id}', 1)" class="upvote-btn" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span class="vote-count">${data.upvotes}</span></div>
-                                <div onclick="window.vote('${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
-                                <div onclick="window.toggleComments('${data.id}')"><i class="fa-regular fa-comment"></i> <span>${data.comments ? data.comments.length : 0}</span></div>
+                            <div class="comments-section" id="comments-${data.id}">
+                                <div class="comment-input-area">
+                                    <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
+                                    <button class="comment-btn" onclick="window.addComment('${data.id}')">Reply</button>
+                                </div>
+                                <div class="comments-list">${commentsHTML}</div>
                             </div>
-                            <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
-                        </div>
-                        <div class="comments-section" id="comments-${data.id}">
-                            <div class="comment-input-area">
-                                <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
-                                <button class="comment-btn" onclick="window.addComment('${data.id}')">Reply</button>
-                            </div>
-                            <div class="comments-list">${commentsHTML}</div>
                         </div>
                     </div>
-                </div>
                 `);
             });
 
+            // Sabhi naye cards par observer attach kiya gaya hai taaki scroll karte waqt har baar animation chale
             const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
@@ -630,6 +619,56 @@
         window.reportPost = function(id) { postToReport = id; document.getElementById('reportModal').style.display = 'flex'; };
         window.closeReportModal = function() { document.getElementById('reportModal').style.display = 'none'; postToReport = null; };
         window.submitReport = function() { const reasons = document.getElementsByName('reportReason'); let selectedReason = false; for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = true; reasons[i].checked = false; break; } } if(!selectedReason) { window.createNotification("Select a reason first", "fa-circle-exclamation"); return; } if(postToReport) { document.getElementById(postToReport).style.display = 'none'; } window.closeReportModal(); window.createNotification("Report submitted & hidden.", "fa-shield-halved"); };
+
+        /* --- PULL TO REFRESH ENGINE --- */
+        const ptrContainer = document.getElementById('custom-ptr');
+        const ptrIcon = ptrContainer.querySelector('i');
+        let ptrStartY = 0;
+        let ptrCurrentY = 0;
+        let isPulling = false;
+        let isRefreshing = false;
+
+        document.body.addEventListener('touchstart', (e) => {
+            if (window.scrollY === 0 && !isRefreshing) {
+                ptrStartY = e.touches[0].clientY;
+                isPulling = true;
+                ptrContainer.style.transition = 'none'; 
+            }
+        }, {passive: true});
+
+        document.body.addEventListener('touchmove', (e) => {
+            if (!isPulling || isRefreshing) return;
+            ptrCurrentY = e.touches[0].clientY;
+            let pullDistance = ptrCurrentY - ptrStartY;
+
+            if (pullDistance > 0 && window.scrollY === 0) {
+                let visualDistance = pullDistance * 0.35; 
+                if (visualDistance > 55) visualDistance = 55 + (visualDistance - 55) * 0.2; 
+                ptrContainer.style.transform = `translateX(-50%) translateY(${visualDistance}px)`;
+                ptrIcon.style.transform = `rotate(${visualDistance * 4}deg)`;
+            }
+        }, {passive: true});
+
+        document.body.addEventListener('touchend', () => {
+            if (!isPulling || isRefreshing) return;
+            isPulling = false;
+            let pullDistance = ptrCurrentY - ptrStartY;
+
+            ptrContainer.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+
+            if (pullDistance > 90) {  
+                isRefreshing = true;
+                ptrContainer.style.transform = `translateX(-50%) translateY(55px)`; 
+                ptrIcon.classList.add('fa-spin'); 
+                
+                setTimeout(() => {
+                    location.reload();
+                }, 800); 
+            } else { 
+                ptrContainer.style.transform = `translateX(-50%) translateY(0)`;
+                setTimeout(() => { ptrIcon.style.transform = `rotate(0deg)`; }, 300);
+            }
+        });
 
     </script>
 </body>
