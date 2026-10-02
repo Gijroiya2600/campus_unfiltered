@@ -255,6 +255,9 @@
         <div id="feed">
             <div style="text-align:center; padding: 20px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Loading confessions from database...</div>
         </div>
+        <div id="loadingMoreIndicator" style="text-align: center; padding: 20px; color: var(--text-muted); display: none;">
+            <i class="fa-solid fa-spinner fa-spin"></i> Loading more confessions...
+        </div>
     </div>
 
     <nav class="bottom-nav">
@@ -267,7 +270,7 @@
     <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, getDocs, startAfter } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -292,15 +295,19 @@
         let postToReport = null;
         window.currentImageBase64 = null;
         
+        // Pagination State Variables
+        const PAGE_SIZE = 10;
+        let lastVisibleDoc = null;
+        let isLoadingMore = false;
+        let hasMorePosts = true;
+        
         const ADMIN_EMAIL = "klak50506@gmail.com";
 
-        // HTML Escape Helper to prevent XSS vulnerability
         function escapeHtml(str) {
             if (!str) return '';
             return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
         }
 
-        /* --- STABLE OBSERVER FOR REPEATING BLUR REVEAL --- */
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
@@ -323,7 +330,96 @@
             } else {
                 authContainer.innerHTML = `<button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>`;
             }
-            window.renderFeed();
+        });
+
+        // Initial Feed Load with Pagination
+        window.loadInitialPosts = async function() {
+            const feed = document.getElementById('feed');
+            feed.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--text-muted);"><i class="fa-solid fa-spinner fa-spin"></i> Loading confessions...</div>';
+            
+            try {
+                const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(PAGE_SIZE));
+                const snapshot = await getDocs(q);
+                
+                window.allPosts = [];
+                if (snapshot.empty) {
+                    feed.innerHTML = '<div style="text-align:center; padding: 20px; color: #9ca3af;">Be the first to confess something!</div>';
+                    hasMorePosts = false;
+                    return;
+                }
+
+                lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    data.id = docSnap.id;
+                    window.allPosts.push(data);
+                });
+
+                if (snapshot.docs.length < PAGE_SIZE) {
+                    hasMorePosts = false;
+                } else {
+                    hasMorePosts = true;
+                }
+
+                window.renderFeed();
+            } catch (e) {
+                feed.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--downvote);">Error loading confessions. Please refresh.</div>';
+            }
+        };
+
+        // Load More Posts (Infinite Scroll Handler)
+        window.loadMorePosts = async function() {
+            if (isLoadingMore || !hasMorePosts || window.currentSort === 'trending') return;
+            
+            const searchQuery = document.getElementById('searchInput').value.toLowerCase();
+            if (searchQuery) return; // Disable infinite scroll during active search
+
+            isLoadingMore = true;
+            document.getElementById('loadingMoreIndicator').style.display = 'block';
+
+            try {
+                const q = query(
+                    collection(db, "confessions"), 
+                    orderBy("timestamp", "desc"), 
+                    startAfter(lastVisibleDoc), 
+                    limit(PAGE_SIZE)
+                );
+                const snapshot = await getDocs(q);
+
+                if (snapshot.empty) {
+                    hasMorePosts = false;
+                    document.getElementById('loadingMoreIndicator').style.display = 'none';
+                    isLoadingMore = false;
+                    return;
+                }
+
+                lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    data.id = docSnap.id;
+                    if (!window.allPosts.some(p => p.id === data.id)) {
+                        window.allPosts.push(data);
+                    }
+                });
+
+                if (snapshot.docs.length < PAGE_SIZE) {
+                    hasMorePosts = false;
+                }
+
+                window.renderFeed();
+            } catch (e) {
+                console.error("Error loading more posts:", e);
+            }
+
+            document.getElementById('loadingMoreIndicator').style.display = 'none';
+            isLoadingMore = false;
+        };
+
+        // Scroll Event Listener for Infinite Scrolling
+        window.addEventListener('scroll', () => {
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
+                window.loadMorePosts();
+            }
         });
 
         window.loginWithGoogle = async function() {
@@ -340,7 +436,7 @@
             if (confirm("Do you want to logout?")) {
                 await signOut(auth);
                 window.closeProfileModal();
-                window.createNotification("Logged out successfully", "fa-right-from-bracket");
+                window.createNotification("Logged successfully", "fa-right-from-bracket");
             }
         };
 
@@ -383,7 +479,7 @@
                 userPosts.forEach(p => {
                     myPostsList.insertAdjacentHTML('beforeend', `
                         <div style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center;">
-                            <span style="font-size: 0.85rem; color: #d1d5db; max-width: 75%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${p.text}</span>
+                            <span style="font-size: 0.85rem; color: #d1d5db; max-width: 75%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.text)}</span>
                             <button onclick="window.deletePost('${p.id}')" style="background: none; border: none; color: var(--downvote); cursor: pointer; font-size: 1rem;"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     `);
@@ -397,7 +493,6 @@
             document.getElementById('profileModal').style.display = 'none';
         };
 
-        // Admin Panel Functions
         window.openAdminModal = function() {
             window.closeProfileModal();
             document.getElementById('adminModal').style.display = 'flex';
@@ -462,18 +557,6 @@
                 alert("Error dismissing report.");
             }
         };
-
-        const q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(100));
-        
-        onSnapshot(q, (snapshot) => {
-            window.allPosts = [];
-            snapshot.forEach((docSnap) => {
-                const data = docSnap.data();
-                data.id = docSnap.id;
-                window.allPosts.push(data);
-            });
-            window.renderFeed(); 
-        });
 
         window.renderFeed = function() {
             const feed = document.getElementById('feed');
@@ -688,7 +771,7 @@
                     timestamp: Date.now(), uid: window.currentUser.uid, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
-                input.value = ""; window.removeImage(); window.closeModal(); document.getElementById('latestBtn').click(); window.createNotification("Confession posted live!", "fa-check");
+                input.value = ""; window.removeImage(); window.closeModal(); window.loadInitialPosts(); window.createNotification("Confession posted live!", "fa-check");
             } catch (e) { alert("Error posting."); }
             btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>'; btn.disabled = false;
         };
@@ -748,7 +831,6 @@
                     const postRef = doc(db, "confessions", postToReport);
                     const post = window.allPosts.find(p => p.id === postToReport);
                     
-                    // Check if user already reported this post to prevent duplicate bloat
                     const existingReports = post && post.reports ? post.reports : [];
                     if (existingReports.some(r => r.uid === window.currentUser.uid)) {
                         window.createNotification("You have already reported this post.", "fa-circle-exclamation");
@@ -822,6 +904,9 @@
                 setTimeout(() => { ptrIcon.style.transform = `rotate(0deg)`; }, 300);
             }
         });
+
+        // Trigger initial data load on page ready
+        window.loadInitialPosts();
 
     </script>
 </body>
