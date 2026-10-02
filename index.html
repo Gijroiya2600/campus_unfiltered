@@ -4,8 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Osgu Campus Confession</title>
-    <!-- REAL PWA MANIFEST LINK -->
-    <link rel="manifest" href="manifest.json">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -43,11 +41,10 @@
 
         header {
             position: sticky; top: 0; 
-            background-color: rgba(9, 9, 11, 0.75); 
-            -webkit-backdrop-filter: blur(16px);
-            backdrop-filter: blur(16px);
-            border-bottom: 1px solid var(--border-color); 
-            padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
+            background-color: rgba(9, 9, 11, 0.85); 
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
         }
         header h1 { font-size: 1.25rem; font-weight: bold; margin: 0; color: white; display: flex; align-items: center; }
         .header-icons { display: flex; gap: 12px; align-items: center; }
@@ -88,15 +85,17 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* 100% WORKING PURE CSS ANIMATION */
-        @keyframes slideUpFade {
-            0% { opacity: 0; transform: translateY(30px); }
-            100% { opacity: 1; transform: translateY(0); }
-        }
+        /* RESTORED SCROLL ANIMATION CSS */
         .card-reveal-wrapper {
-            opacity: 0; /* Starts hidden, animation will show it */
-            animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            opacity: 0; 
+            transform: translateY(20px);
+            transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+            will-change: transform, opacity; 
             margin-bottom: 24px;
+        }
+        .card-reveal-wrapper.show { 
+            opacity: 1; 
+            transform: translateY(0); 
         }
 
         .card { 
@@ -272,10 +271,6 @@
             </div>
             <div id="profileDetails" style="text-align: center; margin-bottom: 20px;"></div>
             
-            <button onclick="window.requestNotificationPermission()" style="background: rgba(139, 92, 246, 0.2); border: 1px solid var(--primary); color: white; padding: 10px 16px; border-radius: 9999px; font-size: 0.85rem; cursor: pointer; font-weight: bold; margin-bottom: 15px; display: block; width: 100%;">
-                <i class="fa-solid fa-bell"></i> Enable Push Notifications
-            </button>
-
             <h3 style="font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Confessions</h3>
             <div id="myProfilePostsList" style="margin-top: 15px;"></div>
         </div>
@@ -392,7 +387,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
-        import { getMessaging, getToken, onMessage } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-messaging.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
@@ -407,7 +401,6 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
-        const messaging = getMessaging(app);
         const provider = new GoogleAuthProvider();
 
         window.currentUser = null;
@@ -461,31 +454,6 @@
             window.createNotification("Theme updated successfully!", "fa-palette");
         };
 
-        window.requestNotificationPermission = async function() {
-            triggerHaptic(30);
-            try {
-                const permission = await Notification.requestPermission();
-                if (permission === 'granted') {
-                    const token = await getToken(messaging, { 
-                        vapidKey: 'YOUR_WEB_PUSH_VAPID_KEY_HERE' 
-                    });
-                    if (token) {
-                        window.createNotification("Push notifications enabled successfully!", "fa-bell");
-                    }
-                } else {
-                    alert('Notification permission denied.');
-                }
-            } catch (error) {
-                console.error('Error retrieving token: ', error);
-            }
-        };
-
-        onMessage(messaging, (payload) => {
-            const title = payload.notification ? payload.notification.title : 'New Notification';
-            const body = payload.notification ? payload.notification.body : '';
-            window.createNotification(`${title}: ${body}`, 'fa-bell');
-        });
-
         function isUserAdmin() { return window.currentUser && window.currentUser.email === ADMIN_EMAIL; }
 
         function escapeHtml(str) {
@@ -510,6 +478,17 @@
             }
             return null;
         }
+
+        // RESTORED PERFECT SCROLL OBSERVER
+        window.cardObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) { 
+                    entry.target.classList.add('show'); 
+                } else {
+                    entry.target.classList.remove('show');
+                }
+            });
+        }, { root: null, rootMargin: '0px 0px 0px 0px', threshold: 0.1 });
 
         onAuthStateChanged(auth, (user) => {
             window.currentUser = user;
@@ -888,6 +867,10 @@
                     }
                 }
             });
+
+            // ATTACH OBSERVER TO NEWLY LOADED POSTS
+            const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
+            wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
         function updatePostCardDOM(postId) {
