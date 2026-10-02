@@ -295,13 +295,17 @@
         let postToReport = null;
         window.currentImageBase64 = null;
         
-        // Pagination & Realtime Sync State Variables
         let currentLimit = 10;
         let unsubscribeFeed = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
         
         const ADMIN_EMAIL = "klak50506@gmail.com";
+
+        // Helper function to check admin securely via Auth email
+        function isUserAdmin() {
+            return window.currentUser && window.currentUser.email === ADMIN_EMAIL;
+        }
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -332,7 +336,6 @@
             }
         });
 
-        // Setup Realtime Feed with Incremental Limit (Solves Real-time + Infinite Scroll problem)
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -367,17 +370,16 @@
             });
         };
 
-        // Infinite Scroll Handler
         window.loadMorePosts = function() {
             if (isLoadingMore || !hasMorePosts) return;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; // Disable during active search filter
+            if (searchQuery) return; 
 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
             if (indicator) indicator.style.display = 'block';
 
-            currentLimit += 10; // Expand limit to pull next batch in real-time listener
+            currentLimit += 10; 
             window.setupFeedListener();
 
             setTimeout(() => {
@@ -386,7 +388,6 @@
             }, 600);
         };
 
-        // Scroll Event Listener
         window.addEventListener('scroll', () => {
             if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
                 window.loadMorePosts();
@@ -428,7 +429,7 @@
             const detailsDiv = document.getElementById('profileDetails');
             
             let adminBtnHTML = "";
-            if (user && user.email === ADMIN_EMAIL) {
+            if (isUserAdmin()) {
                 adminBtnHTML = `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>`;
             }
 
@@ -465,6 +466,10 @@
         };
 
         window.openAdminModal = function() {
+            if (!isUserAdmin()) {
+                alert("Access Denied: Admin privileges required.");
+                return;
+            }
             window.closeProfileModal();
             document.getElementById('adminModal').style.display = 'flex';
             
@@ -498,18 +503,26 @@
         };
 
         window.adminDeletePost = async function(postId) {
+            if (!isUserAdmin()) {
+                alert("Unauthorized action.");
+                return;
+            }
             if (confirm("Are you sure you want to permanently delete this post?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
                     window.createNotification("Post deleted permanently by admin.", "fa-trash");
                     window.openAdminModal(); 
                 } catch (e) {
-                    alert("Error deleting post.");
+                    alert("Error deleting post: Permission denied or network issue.");
                 }
             }
         };
 
         window.dismissReport = async function(postId) {
+            if (!isUserAdmin()) {
+                alert("Unauthorized action.");
+                return;
+            }
             try {
                 const postRef = doc(db, "confessions", postId);
                 await updateDoc(postRef, {
@@ -519,7 +532,7 @@
                 window.createNotification("Report dismissed. Post restored to feed.", "fa-circle-check");
                 window.openAdminModal(); 
             } catch (e) {
-                alert("Error dismissing report.");
+                alert("Error dismissing report: Permission denied.");
             }
         };
 
@@ -540,7 +553,7 @@
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
-                if (data.isFlagged && data.reports && data.reports.length > 0) return;
+                if (data.isFlagged && data.reports && data.reports.length > 0 && !isUserAdmin()) return;
 
                 if (searchQuery && !data.text.toLowerCase().includes(searchQuery)) return;
 
@@ -575,7 +588,7 @@
                 const imageHTML = data.imageUrl ? `<img src="${data.imageUrl}" class="feed-img" ontouchstart="window.startPinch(event, this)" ontouchmove="window.movePinch(event, this)" ontouchend="window.endPinch(event, this)">` : '';
 
                 const isMyPost = myPosts.includes(data.id) || (window.currentUser && data.uid === window.currentUser.uid);
-                const deleteBtnHTML = isMyPost ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
+                const deleteBtnHTML = (isMyPost || isUserAdmin()) ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
                 const isUpvoted = currentUid && data.upvotedBy && data.upvotedBy.includes(currentUid);
                 const isDownvoted = currentUid && data.downvotedBy && data.downvotedBy.includes(currentUid);
@@ -666,7 +679,7 @@
                     let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
                     myPosts = myPosts.filter(id => id !== postId);
                     localStorage.setItem('myPosts', JSON.stringify(myPosts));
-                } catch(e) { alert("Error deleting post."); }
+                } catch(e) { alert("Error deleting post: Permission denied."); }
             }
         };
 
@@ -754,7 +767,7 @@
             document.getElementById('trendingBtn').classList.remove('active'); 
             document.getElementById(type + 'Btn').classList.add('active'); 
             window.currentSort = type; 
-            currentLimit = 10; // Reset pagination limit on tab change
+            currentLimit = 10; 
             hasMorePosts = true;
             window.setupFeedListener(); 
         };
@@ -876,7 +889,6 @@
             }
         });
 
-        // Initial Realtime Feed Load
         window.setupFeedListener();
 
     </script>
