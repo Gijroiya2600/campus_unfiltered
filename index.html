@@ -383,11 +383,7 @@
         // Subtle Haptic Feedback Helper
         function triggerHaptic(ms = 30) {
             if ("vibrate" in navigator) {
-                try {
-                    navigator.vibrate(ms);
-                } catch (e) {
-                    // Ignore if restricted by browser policy
-                }
+                try { navigator.vibrate(ms); } catch (e) {}
             }
         }
 
@@ -445,15 +441,11 @@
             }
         });
 
+        // Feed Listener with Local Sorting Fallback (Fixes Trending/Index Error)
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
-            let q;
-            if (window.currentSort === 'trending') {
-                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), orderBy("timestamp", "desc"), limit(currentLimit));
-            } else {
-                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(currentLimit));
-            }
+            let q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(currentLimit));
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
                 window.allPosts = [];
@@ -462,6 +454,11 @@
                     data.id = docSnap.id;
                     window.allPosts.push(data);
                 });
+
+                // Local sort fallback if trending tab is active
+                if (window.currentSort === 'trending') {
+                    window.allPosts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
+                }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
                 if (snapshot.docs.length < currentLimit) {
@@ -896,7 +893,7 @@
 
             text = filterProfanity(text);
             const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.photoURL || null, timestamp: Date.now() };
+            const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.userPhoto || null, timestamp: Date.now() };
             const postRef = doc(db, "confessions", postId);
             try { await updateDoc(postRef, { comments: arrayUnion(commentData) }); input.value = ""; window.createNotification("Comment posted live!", "fa-comment"); } 
             catch (error) { alert("Failed to post comment."); }
