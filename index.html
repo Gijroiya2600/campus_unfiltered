@@ -113,7 +113,7 @@
         .user-block { display: flex; align-items: center; }
         .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .user-info h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: white; display: flex; align-items: center; gap: 8px; }
+        .user-info h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: white; display: flex; align-items: center; gap: 6px; }
         .user-info p { margin: 0; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
         
         .viral-badge { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.6rem; font-weight: bold; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; }
@@ -128,33 +128,37 @@
         .feed-stats { display: flex; flex-direction: column; gap: 10px; border-top: 1px solid var(--border-color); padding-top: 12px; font-size: 0.9rem; }
         .main-stats { display: flex; justify-content: space-between; align-items: center; color: var(--text-muted); }
         .stat-group { display: flex; gap: 16px; }
-        .feed-stats div { cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
+        .feed-stats div { cursor: pointer; display: flex; align-items: center; transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), color 0.2s; }
+        .feed-stats div:active { transform: scale(0.85); }
         .feed-stats i { margin-right: 5px; }
         
-        /* Upvote / Vote Bounce Animation */
-        .bounce-anim {
-            animation: bounceEffect 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        /* Neon Crown Glow Animation */
+        .neon-crown {
+            width: 20px;
+            height: 16px;
+            display: inline-block;
+            vertical-align: middle;
+            animation: neonPulse 2s ease-in-out infinite alternate;
         }
-        @keyframes bounceEffect {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.4); }
-            100% { transform: scale(1); }
+        @keyframes neonPulse {
+            0% { filter: drop-shadow(0 0 2px #ffcc33) drop-shadow(0 0 6px #e69500); }
+            100% { filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 12px #ffab1a) drop-shadow(0 0 20px #e68a00); }
         }
 
-        /* Emoji Reaction Pop Animation */
-        .pop-anim {
-            animation: popEffect 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        @keyframes popEffect {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.25); }
-            100% { transform: scale(1); }
+        /* Smooth Fluid Scale Animation for Votes & Reactions */
+        .smooth-scale {
+            transform: scale(1.25);
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         .reaction-bar { display: flex; gap: 10px; }
-        .reaction-pill { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
+        .reaction-pill { 
+            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; 
+            transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s, border-color 0.2s, color 0.2s; 
+        }
+        .reaction-pill:active { transform: scale(0.9); }
         .reaction-pill:hover { border-color: var(--primary); color: white; }
-        .reaction-pill.active { background: rgba(139, 92, 246, 0.2); border-color: var(--primary); color: white; }
+        .reaction-pill.active { background: rgba(139, 92, 246, 0.2); border-color: var(--primary); color: white; transform: scale(1.08); }
 
         .share-btn:hover { color: var(--whatsapp); }
         
@@ -430,6 +434,22 @@
         const ADMIN_EMAIL = "klak50506@gmail.com";
         const BAD_WORDS = ["gali1", "gali2"]; 
 
+        // Royal Neon Crown SVG Template for Admin
+        const crownSVG = `<svg class="neon-crown" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#ff9900" />
+                    <stop offset="50%" stop-color="#ffcc33" />
+                    <stop offset="100%" stop-color="#cc5200" />
+                </linearGradient>
+            </defs>
+            <path d="M12 32 L32 46 L50 16 L68 46 L88 32 L81 60 L19 60 Z" stroke="url(#neonGradient)" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M32 46 L37 30 L43 40" stroke="url(#neonGradient)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M68 46 L63 30 L57 40" stroke="url(#neonGradient)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <path d="M19 64 C35 69, 65 69, 81 64" stroke="url(#neonGradient)" stroke-width="2" stroke-linecap="round"/>
+            <path d="M21 68 C36 72, 64 72, 79 68" stroke="url(#neonGradient)" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>`;
+
         function triggerHaptic(ms = 30) {
             if ("vibrate" in navigator) {
                 try { navigator.vibrate(ms); } catch (e) {}
@@ -567,10 +587,12 @@
             const user = window.currentUser;
             const detailsDiv = document.getElementById('profileDetails');
             let adminBtnHTML = isUserAdmin() ? `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>` : '';
+            
+            const adminBadge = isUserAdmin() ? ` ${crownSVG}` : '';
 
             detailsDiv.innerHTML = `
                 <img src="${user.photoURL}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
-                <h3 style="margin: 0; color: white;">${escapeHtml(user.displayName)}</h3>
+                <h3 style="margin: 0; color: white; display: flex; align-items: center; justify-content: center; gap: 6px;">${escapeHtml(user.displayName)}${adminBadge}</h3>
                 <p style="margin: 5px 0 15px 0; font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(user.email)}</p>
                 ${adminBtnHTML}
                 <button onclick="window.logoutUser()" style="background: var(--downvote); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold;">Logout</button>
@@ -693,9 +715,10 @@
                     data.comments.forEach(c => {
                         const cName = escapeHtml(c.userName) || "Anonymous Student";
                         const cAvatar = c.userPhoto ? `<img src="${c.userPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
+                        const cAdminBadge = (c.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
                         commentsHTML += `
                             <div class="comment-item">
-                                <div class="comment-meta">${cAvatar} <span style="color: var(--primary);">${cName}</span></div>
+                                <div class="comment-meta">${cAvatar} <span style="color: var(--primary);">${cName}</span>${cAdminBadge}</div>
                                 <div style="margin-top: 4px;">${escapeHtml(c.text)}</div>
                             </div>
                         `;
@@ -725,6 +748,7 @@
                 const userReacted = data.userReactions || {};
                 const authorName = escapeHtml(data.userName) || "Anonymous Panda 🐼";
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
+                const postAdminBadge = (data.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
 
                 feed.insertAdjacentHTML('beforeend', `
                     <div class="card-reveal-wrapper">
@@ -733,7 +757,7 @@
                                 <div class="user-block">
                                     <div class="avatar">${authorAvatar}</div>
                                     <div class="user-info">
-                                        <h3>${authorName} ${viralBadgeHTML}</h3>
+                                        <h3>${authorName}${postAdminBadge} ${viralBadgeHTML}</h3>
                                         <p>${timeStr} &bull; ${timerBadgeHTML}</p>
                                     </div>
                                 </div>
@@ -745,7 +769,7 @@
                             ${imageHTML}
                             <p class="feed-text raw-text">${data.text}</p>
                             
-                            <!-- Reaction Bar with Pop Animation -->
+                            <!-- Reaction Bar with Smooth Fluid Scale -->
                             <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
                                 <div id="react-${data.id}-lol" class="reaction-pill ${userReacted[currentUid] === 'lol' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'lol')">😂 <span>${reactions.lol || 0}</span></div>
                                 <div id="react-${data.id}-relatable" class="reaction-pill ${userReacted[currentUid] === 'relatable' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'relatable')">💀 <span>${reactions.relatable || 0}</span></div>
@@ -780,16 +804,15 @@
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
 
-        // Upvote / Vote Bounce Effect Implementation
+        // Smooth Fluid Vote Animation
         window.vote = async function(event, postId, voteType) {
             triggerHaptic(25);
             
-            // Add bounce animation class
             const btnId = voteType === 1 ? `upvote-btn-${postId}` : `downvote-btn-${postId}`;
             const btnEl = document.getElementById(btnId);
             if (btnEl) {
-                btnEl.classList.add('bounce-anim');
-                setTimeout(() => btnEl.classList.remove('bounce-anim'), 300);
+                btnEl.classList.add('smooth-scale');
+                setTimeout(() => btnEl.classList.remove('smooth-scale'), 250);
             }
 
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
@@ -817,15 +840,14 @@
             }
         };
 
-        // Emoji Reaction Pop Animation Implementation
+        // Smooth Fluid Reaction Animation
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
 
-            // Add pop animation class
             const pillEl = document.getElementById(`react-${postId}-${reactionType}`);
             if (pillEl) {
-                pillEl.classList.add('pop-anim');
-                setTimeout(() => pillEl.classList.remove('pop-anim'), 300);
+                pillEl.classList.add('smooth-scale');
+                setTimeout(() => pillEl.classList.remove('smooth-scale'), 250);
             }
 
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
@@ -936,7 +958,7 @@
                     text: formattedText, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
                     reactions: { lol: 0, relatable: 0, tea: 0, wholesome: 0 }, userReactions: {},
                     reports: [], isFlagged: false, expiresAt: expiresAtTimestamp,
-                    timestamp: Date.now(), uid: window.currentUser.uid, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
+                    timestamp: Date.now(), uid: window.currentUser.uid, email: window.currentUser.email, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
                 input.value = ""; document.getElementById('disappearingToggle').checked = false; window.removeImage(); window.closeModal(); window.createNotification("Confession posted live!", "fa-check");
@@ -959,6 +981,7 @@
             const commentData = { 
                 text: formattedCommentText, 
                 uid: window.currentUser.uid, 
+                email: window.currentUser.email,
                 userName: window.currentUser.displayName || "Anonymous Student", 
                 userPhoto: window.currentUser.photoURL || null, 
                 timestamp: Date.now() 
@@ -1004,7 +1027,6 @@
         };
         window.createNotification = function(message, iconName) { const list = document.getElementById('notifList'); const emptyMsg = document.getElementById('emptyNotif'); const badge = document.getElementById('notifBadge'); if (emptyMsg) emptyMsg.remove(); list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`); unreadNotifications++; badge.innerText = unreadNotifications; badge.style.display = 'flex'; };
         
-        // Smooth Comment Accordion Toggle
         window.toggleComments = function(postId) { 
             triggerHaptic(15);
             const section = document.getElementById('comments-' + postId); 
