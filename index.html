@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <!-- NAYA: Browser Tab ka naam change kiya -->
     <title>Osgu Campus Confession</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -99,11 +98,20 @@
 </head>
 <body>
 
+    <!-- SECURITY: Right-Click and Inspect Block -->
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+        document.onkeydown = function(e) {
+            if (e.keyCode == 123) return false;
+            if (e.ctrlKey && e.shiftKey && (e.keyCode == 73 || e.keyCode == 74)) return false;
+            if (e.ctrlKey && e.keyCode == 85) return false;
+        };
+    </script>
+
     <div id="ptr-spinner"><i class="fa-solid fa-circle-notch fa-spin"></i> Refreshing...</div>
 
     <header>
         <div style="max-width: 600px; width: 100%; margin: 0 auto; display: flex; justify-content: space-between; align-items: center;">
-            <!-- NAYA: Main Header naam change kiya -->
             <h1><i class="fa-solid fa-mask" style="color: var(--primary); margin-right: 10px;"></i> Osgu Campus Confession</h1>
             <div class="header-icons">
                 <div class="bell-wrapper" onclick="window.toggleNotifications()">
@@ -557,7 +565,6 @@
             section.style.display = section.style.display === 'block' ? 'none' : 'block';
         };
 
-        // NAYA: WhatsApp share text ka naam change kiya
         window.shareToWhatsApp = function(encodedText) {
             const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decodeURIComponent(encodedText)}"\n\nDownload the app to reply!`;
             window.location.href = `whatsapp://send?text=${shareText}`;
