@@ -184,8 +184,8 @@
     <!-- FIREBASE AND JAVASCRIPT LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        // NAYA: deleteDoc function import kiya hai
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, deleteDoc } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        // NAYA: 'increment' ko import kiya hai accurate counting ke liye
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
@@ -224,8 +224,11 @@
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             let displayPosts = [...window.allPosts];
             
-            // Local Storage se check karo ki konsi post is device se hui hai
             let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
+            
+            // NAYA: User ke purane likes/dislikes read karo
+            let upvoted = JSON.parse(localStorage.getItem('upvoted') || '[]');
+            let downvoted = JSON.parse(localStorage.getItem('downvoted') || '[]');
             
             if (window.currentSort === 'trending') displayPosts.sort((a, b) => b.upvotes - a.upvotes); 
 
@@ -253,9 +256,14 @@
 
                 const imageHTML = data.imageUrl ? `<img src="${data.imageUrl}" class="feed-img" ontouchstart="window.startPinch(event, this)" ontouchmove="window.movePinch(event, this)" ontouchend="window.endPinch(event, this)">` : '';
 
-                // NAYA: Agar post is phone se hui hai (myPosts list me hai), toh Delete button dikhao
                 const isMyPost = myPosts.includes(data.id);
                 const deleteBtnHTML = isMyPost ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
+
+                // NAYA: Buttons ke colors aur states set karo
+                const isUpvoted = upvoted.includes(data.id);
+                const isDownvoted = downvoted.includes(data.id);
+                const upColor = isUpvoted ? 'var(--primary)' : 'inherit';
+                const downColor = isDownvoted ? 'var(--downvote)' : 'inherit';
 
                 feed.insertAdjacentHTML('beforeend', `
                 <div class="card post-item" id="${data.id}">
@@ -276,8 +284,8 @@
                     <p class="feed-text raw-text">${data.text}</p>
                     <div class="feed-stats">
                         <div class="stat-group">
-                            <div onclick="window.vote('${data.id}', 1, ${data.upvotes})" class="upvote-btn"><i class="fa-solid fa-arrow-up"></i> <span class="vote-count">${data.upvotes}</span></div>
-                            <div onclick="window.vote('${data.id}', -1, ${data.downvotes})"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
+                            <div onclick="window.vote('${data.id}', 1)" class="upvote-btn" style="color: ${upColor};"><i class="fa-solid fa-arrow-up"></i> <span class="vote-count">${data.upvotes}</span></div>
+                            <div onclick="window.vote('${data.id}', -1)" style="color: ${downColor};"><i class="fa-solid fa-arrow-down"></i> <span>${data.downvotes}</span></div>
                             <div onclick="window.toggleComments('${data.id}')"><i class="fa-regular fa-comment"></i> <span>${data.comments ? data.comments.length : 0}</span></div>
                         </div>
                         <div class="share-btn" onclick="window.shareToWhatsApp('${encodeURIComponent(data.text)}')"><i class="fa-brands fa-whatsapp"></i></div>
@@ -294,14 +302,64 @@
             });
         };
 
-        // NAYA: Post Delete karne ka logic
+        // NAYA: Advanced Toggle Vote Logic
+        window.vote = async function(postId, voteType) {
+            let upvoted = JSON.parse(localStorage.getItem('upvoted') || '[]');
+            let downvoted = JSON.parse(localStorage.getItem('downvoted') || '[]');
+            const postRef = doc(db, "confessions", postId);
+            let updates = {};
+
+            if (voteType === 1) { // Upvote button clicked
+                if (upvoted.includes(postId)) {
+                    // Undo Upvote
+                    updates.upvotes = increment(-1);
+                    upvoted = upvoted.filter(id => id !== postId);
+                } else {
+                    // Add Upvote
+                    updates.upvotes = increment(1);
+                    upvoted.push(postId);
+                    // Agar pehle downvote kiya tha, toh usko hatao
+                    if (downvoted.includes(postId)) {
+                        updates.downvotes = increment(-1);
+                        downvoted = downvoted.filter(id => id !== postId);
+                    }
+                }
+            } else { // Downvote button clicked
+                if (downvoted.includes(postId)) {
+                    // Undo Downvote
+                    updates.downvotes = increment(-1);
+                    downvoted = downvoted.filter(id => id !== postId);
+                } else {
+                    // Add Downvote
+                    updates.downvotes = increment(1);
+                    downvoted.push(postId);
+                    // Agar pehle upvote kiya tha, toh usko hatao
+                    if (upvoted.includes(postId)) {
+                        updates.upvotes = increment(-1);
+                        upvoted = upvoted.filter(id => id !== postId);
+                    }
+                }
+            }
+
+            // Local storage mein save karo taaki refresh par memory rahe
+            localStorage.setItem('upvoted', JSON.stringify(upvoted));
+            localStorage.setItem('downvoted', JSON.stringify(downvoted));
+
+            // Instant UI update
+            window.renderFeed();
+
+            // Firebase Database update
+            if (Object.keys(updates).length > 0) {
+                await updateDoc(postRef, updates);
+            }
+        };
+
         window.deletePost = async function(postId) {
             if(confirm("Are you sure you want to delete this confession?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
                     window.createNotification("Post deleted successfully!", "fa-trash");
                     
-                    // Memory se ID hata do
                     let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
                     myPosts = myPosts.filter(id => id !== postId);
                     localStorage.setItem('myPosts', JSON.stringify(myPosts));
@@ -409,7 +467,6 @@
                                       .replace(/(^|\s)(#[a-z\d-]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
 
             try {
-                // NAYA: Hum post add karte time uski ID ko docRef mein save kar rahe hain
                 const docRef = await addDoc(collection(db, "confessions"), {
                     text: formattedText,
                     imageUrl: window.currentImageBase64, 
@@ -419,7 +476,6 @@
                     timestamp: Date.now()
                 });
                 
-                // NAYA: Post ko 'myPosts' memory list mein save karo taaki is phone par delete ka button dikhe
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
                 myPosts.push(docRef.id);
                 localStorage.setItem('myPosts', JSON.stringify(myPosts));
@@ -436,16 +492,6 @@
             
             btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>';
             btn.disabled = false;
-        };
-
-        window.vote = async function(postId, change, currentCount) {
-            const postRef = doc(db, "confessions", postId);
-            if (change > 0) {
-                await updateDoc(postRef, { upvotes: currentCount + 1 });
-                window.createNotification("Someone upvoted your confession", "fa-arrow-up");
-            } else {
-                await updateDoc(postRef, { downvotes: currentCount + 1 });
-            }
         };
 
         window.addComment = async function(postId) {
