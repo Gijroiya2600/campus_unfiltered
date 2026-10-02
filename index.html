@@ -430,11 +430,16 @@
             window.currentUser = user;
         });
 
-        // Feed Listener with Local Sorting Fallback (Fixes Trending/Index Error)
+        // Feed Listener with Global Single-Field Trending Query (No Composite Index Error)
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
-            let q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(currentLimit));
+            let q;
+            if (window.currentSort === 'trending') {
+                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(currentLimit));
+            } else {
+                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(currentLimit));
+            }
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
                 window.allPosts = [];
@@ -443,11 +448,6 @@
                     data.id = docSnap.id;
                     window.allPosts.push(data);
                 });
-
-                // Local sort fallback if trending tab is active
-                if (window.currentSort === 'trending') {
-                    window.allPosts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
-                }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
                 if (snapshot.docs.length < currentLimit) {
@@ -882,7 +882,16 @@
 
             text = filterProfanity(text);
             const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.photoURL || null, timestamp: Date.now() };
+            
+            // FIXED: Using window.currentUser.photoURL instead of userPhoto
+            const commentData = { 
+                text: formattedCommentText, 
+                uid: window.currentUser.uid, 
+                userName: window.currentUser.displayName || "Anonymous Student", 
+                userPhoto: window.currentUser.photoURL || null, 
+                timestamp: Date.now() 
+            };
+
             const postRef = doc(db, "confessions", postId);
             try { await updateDoc(postRef, { comments: arrayUnion(commentData) }); input.value = ""; window.createNotification("Comment posted live!", "fa-comment"); } 
             catch (error) { alert("Failed to post comment."); }
