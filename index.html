@@ -45,15 +45,13 @@
             border-bottom: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
         }
         header h1 { font-size: 1.25rem; font-weight: bold; margin: 0; color: white; display: flex; align-items: center; }
-        .header-icons { display: flex; gap: 10px; align-items: center; }
+        .header-icons { display: flex; gap: 12px; align-items: center; }
         .bell-wrapper { position: relative; cursor: pointer; }
         .bell-icon { color: var(--text-muted); font-size: 1.25rem; transition: color 0.2s; }
         .notif-badge {
             position: absolute; top: -5px; right: -6px; background-color: var(--notif-badge);
             color: white; font-size: 0.65rem; font-weight: bold; width: 16px; height: 16px; border-radius: 50%; display: none; align-items: center; justify-content: center;
         }
-        .login-btn { background: var(--primary); color: white; border: none; padding: 6px 12px; border-radius: 9999px; font-size: 0.8rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-        .user-profile-icon { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 1px solid var(--primary); }
         .theme-toggle-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border-color); color: var(--text-muted); width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: 0.2s; }
         .theme-toggle-btn:hover { color: var(--primary); border-color: var(--primary); }
 
@@ -173,9 +171,6 @@
                 <div class="bell-wrapper" onclick="window.toggleNotifications()">
                     <i class="fa-solid fa-bell bell-icon"></i>
                     <div id="notifBadge" class="notif-badge">0</div>
-                </div>
-                <div id="authContainer">
-                    <button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>
                 </div>
             </div>
         </div>
@@ -433,12 +428,6 @@
 
         onAuthStateChanged(auth, (user) => {
             window.currentUser = user;
-            const authContainer = document.getElementById('authContainer');
-            if (user) {
-                authContainer.innerHTML = `<img src="${user.photoURL || 'https://via.placeholder.com/32'}" class="user-profile-icon" title="${escapeHtml(user.displayName)}" onclick="window.handleProfileClick()">`;
-            } else {
-                authContainer.innerHTML = `<button class="login-btn" onclick="window.loginWithGoogle()"><i class="fa-brands fa-google"></i> Login</button>`;
-            }
         });
 
         // Feed Listener with Local Sorting Fallback (Fixes Trending/Index Error)
@@ -893,7 +882,7 @@
 
             text = filterProfanity(text);
             const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.userPhoto || null, timestamp: Date.now() };
+            const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.photoURL || null, timestamp: Date.now() };
             const postRef = doc(db, "confessions", postId);
             try { await updateDoc(postRef, { comments: arrayUnion(commentData) }); input.value = ""; window.createNotification("Comment posted live!", "fa-comment"); } 
             catch (error) { alert("Failed to post comment."); }
