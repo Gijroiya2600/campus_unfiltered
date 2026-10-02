@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Osgu Campus Confession</title>
+    <link rel="manifest" id="pwaManifest">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
         :root {
@@ -44,7 +45,7 @@
             border-bottom: 1px solid var(--border-color); padding: 16px; display: flex; justify-content: space-between; align-items: center; z-index: 50;
         }
         header h1 { font-size: 1.25rem; font-weight: bold; margin: 0; color: white; display: flex; align-items: center; }
-        .header-icons { display: flex; gap: 12px; align-items: center; }
+        .header-icons { display: flex; gap: 10px; align-items: center; }
         .bell-wrapper { position: relative; cursor: pointer; }
         .bell-icon { color: var(--text-muted); font-size: 1.25rem; transition: color 0.2s; }
         .notif-badge {
@@ -72,11 +73,10 @@
         
         .container { max-width: 600px; margin: 0 auto; padding: 16px; }
         
-        /* Pinned Notice Banner */
+        /* Notice & Prompt Banners */
         .notice-banner { background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(24, 24, 27, 0.9)); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; display: flex; align-items: center; gap: 12px; font-size: 0.85rem; }
         .notice-banner i { color: var(--primary); font-size: 1.2rem; }
 
-        /* Hashtag Pills Bar */
         .hashtag-pills { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; scrollbar-width: none; }
         .hashtag-pills::-webkit-scrollbar { display: none; }
         .pill { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: 0.2s; }
@@ -103,9 +103,10 @@
         .avatar { width: 40px; height: 40px; border-radius: 50%; background-color: rgba(139, 92, 246, 0.15); border: 1px solid rgba(139, 92, 246, 0.3); display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 12px; color: var(--primary); overflow: hidden; }
         .avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-info h3 { margin: 0; font-size: 0.9rem; font-weight: 600; color: white; display: flex; align-items: center; gap: 8px; }
-        .user-info p { margin: 0; font-size: 0.75rem; color: var(--text-muted); }
+        .user-info p { margin: 0; font-size: 0.75rem; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
         
         .viral-badge { background: linear-gradient(135deg, #f59e0b, #ef4444); color: white; font-size: 0.6rem; font-weight: bold; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; }
+        .snap-timer { color: #f59e0b; font-size: 0.7rem; display: inline-flex; align-items: center; gap: 3px; }
 
         .report-btn { color: var(--text-muted); background: none; border: none; cursor: pointer; transition: 0.2s; font-size: 1rem; }
         .report-btn:hover { color: var(--downvote); }
@@ -119,7 +120,6 @@
         .feed-stats div { cursor: pointer; display: flex; align-items: center; transition: 0.2s; }
         .feed-stats i { margin-right: 5px; }
         
-        /* Reaction Bar */
         .reaction-bar { display: flex; gap: 10px; }
         .reaction-pill { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; transition: 0.2s; }
         .reaction-pill:hover { border-color: var(--primary); color: white; }
@@ -260,6 +260,10 @@
             </div>
             <textarea id="confessionInput" rows="4" placeholder="Spill the tea... use #hashtags!"></textarea>
             
+            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; cursor: pointer;">
+                <input type="checkbox" id="disappearingToggle" style="accent-color: var(--primary);"> Disappear after 24 hours (Snap-style ⏱️️)
+            </label>
+
             <input type="file" id="mediaUpload" style="display: none;" accept="image/*" onchange="window.handleImageSelect(event)">
             <div id="imagePreviewContainer" class="image-preview-container">
                 <img id="imagePreview" src="">
@@ -293,10 +297,19 @@
     </div>
 
     <div class="container">
-        <!-- Pinned Campus Notice Banner -->
+        <!-- Question of the Day Banner -->
+        <div class="card" style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(24, 24, 27, 0.9)); border: 1px solid var(--primary); margin-bottom: 16px; padding: 16px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <span style="font-size: 0.7rem; background: var(--primary); color: white; padding: 2px 8px; border-radius: 9999px; font-weight: bold;">🎯 Question of the Day</span>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Campus Engagement</span>
+            </div>
+            <h3 style="margin: 0 0 10px 0; font-size: 0.95rem; color: white;" id="dailyPromptText">"What is your absolute favorite spot on campus to chill?"</h3>
+            <button onclick="window.answerPrompt()" style="background: var(--primary); color: white; border: none; padding: 6px 14px; border-radius: 9999px; font-size: 0.8rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-pen-nib"></i> Answer Prompt ✨</button>
+        </div>
+
         <div class="notice-banner">
             <i class="fa-solid fa-bullhorn"></i>
-            <div><b>Campus Notice:</b> Keep confessions respectful. Avoid targeting specific individuals by full name. Stay anonymous & have fun! 🎉</div>
+            <div><b>Campus Notice:</b> Keep confessions respectful. Avoid targeting specific individuals. Stay anonymous & safe! 🎉</div>
         </div>
 
         <!-- Hashtag Discovery Pills -->
@@ -334,6 +347,19 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
+        // Embed PWA Manifest Dynamically
+        const manifestData = {
+            "name": "Osgu Campus Confession",
+            "short_name": "OSGU Confess",
+            "start_url": "./",
+            "display": "standalone",
+            "background_color": "#09090b",
+            "theme_color": "#8b5cf6",
+            "icons": [{ "src": "https://cdn-icons-png.flaticon.com/512/3209/3209265.png", "sizes": "512x512", "type": "image/png" }]
+        };
+        const manifestBlob = new Blob([JSON.stringify(manifestData)], {type: 'application/json'});
+        document.getElementById('pwaManifest').href = URL.createObjectURL(manifestBlob);
+
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
             authDomain: "unfiltered-campus.firebaseapp.com",
@@ -363,13 +389,10 @@
         let hasMorePosts = true;
         
         const ADMIN_EMAIL = "klak50506@gmail.com";
-        const BAD_WORDS = ["gali1", "gali2", "abuseword"]; // Add customized profanity keywords if needed
+        const BAD_WORDS = ["gali1", "gali2"]; 
 
-        // Load Saved Theme
         const savedTheme = localStorage.getItem('app_accent_color');
-        if (savedTheme) {
-            document.documentElement.style.setProperty('--primary', savedTheme);
-        }
+        if (savedTheme) { document.documentElement.style.setProperty('--primary', savedTheme); }
 
         window.openThemeModal = function() { document.getElementById('themeModal').style.display = 'flex'; };
         window.closeThemeModal = function() { document.getElementById('themeModal').style.display = 'none'; };
@@ -380,9 +403,7 @@
             window.createNotification("Theme updated successfully!", "fa-palette");
         };
 
-        function isUserAdmin() {
-            return window.currentUser && window.currentUser.email === ADMIN_EMAIL;
-        }
+        function isUserAdmin() { return window.currentUser && window.currentUser.email === ADMIN_EMAIL; }
 
         function escapeHtml(str) {
             if (!str) return '';
@@ -398,13 +419,25 @@
             return cleanText;
         }
 
+        // Anti-Doxxing Guard Regex Check (Phones, 10-digit IDs)
+        function checkDoxxing(text) {
+            const phoneRegex = /(\b\d{10}\b)|(\+91\d{10})|(\b[6-9]\d{9}\b)/;
+            if (phoneRegex.test(text)) {
+                return "⚠️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
+            }
+            return null;
+        }
+
+        window.answerPrompt = function() {
+            const promptText = document.getElementById('dailyPromptText').innerText;
+            window.openModal();
+            document.getElementById('confessionInput').value = `Daily Prompt (${promptText}) - `;
+        };
+
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('show');
-                } else {
-                    entry.target.classList.remove('show'); 
-                }
+                if (entry.isIntersecting) { entry.target.classList.add('show'); } 
+                else { entry.target.classList.remove('show'); }
             });
         }, { root: null, rootMargin: '0px 0px 0px 0px', threshold: 0.05 });
 
@@ -440,15 +473,11 @@
                 if (snapshot.docs.length < currentLimit) {
                     hasMorePosts = false;
                     if (indicator) indicator.style.display = 'none';
-                } else {
-                    hasMorePosts = true;
-                }
+                } else { hasMorePosts = true; }
 
                 window.renderFeed();
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
-                const feed = document.getElementById('feed');
-                if (feed) feed.innerHTML = '<div style="text-align:center; padding: 20px; color: var(--downvote);">Error loading feed. Please refresh.</div>';
             });
         };
 
@@ -471,9 +500,7 @@
         };
 
         window.addEventListener('scroll', () => {
-            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) {
-                window.loadMorePosts();
-            }
+            if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 400) { window.loadMorePosts(); }
         });
 
         window.loginWithGoogle = async function() {
@@ -481,9 +508,7 @@
                 window.closeLoginPrompt();
                 await signInWithPopup(auth, provider);
                 window.createNotification("Logged in successfully!", "fa-check");
-            } catch (error) {
-                alert("Login Error: " + error.code + " - " + error.message);
-            }
+            } catch (error) { alert("Login Error: " + error.message); }
         };
 
         window.logoutUser = async function() {
@@ -495,11 +520,8 @@
         };
 
         window.handleProfileClick = function() {
-            if (!window.currentUser) {
-                document.getElementById('loginPromptModal').style.display = 'flex';
-            } else {
-                window.openProfileModal();
-            }
+            if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; } 
+            else { window.openProfileModal(); }
         };
 
         window.closeLoginPrompt = function() { document.getElementById('loginPromptModal').style.display = 'none'; };
@@ -507,11 +529,7 @@
         window.openProfileModal = function() {
             const user = window.currentUser;
             const detailsDiv = document.getElementById('profileDetails');
-            
-            let adminBtnHTML = "";
-            if (isUserAdmin()) {
-                adminBtnHTML = `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>`;
-            }
+            let adminBtnHTML = isUserAdmin() ? `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>` : '';
 
             detailsDiv.innerHTML = `
                 <img src="${user.photoURL}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
@@ -537,7 +555,6 @@
                     `);
                 });
             }
-
             document.getElementById('profileModal').style.display = 'flex';
         };
 
@@ -547,12 +564,10 @@
             if (!isUserAdmin()) { alert("Access Denied."); return; }
             window.closeProfileModal();
             document.getElementById('adminModal').style.display = 'flex';
-            
             const listContainer = document.getElementById('reportedPostsList');
             listContainer.innerHTML = "";
             
             const flaggedPosts = window.allPosts.filter(p => p.isFlagged && p.reports && p.reports.length > 0);
-            
             if (flaggedPosts.length === 0) {
                 listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending reports to review! 🎉</p>';
                 return;
@@ -608,7 +623,6 @@
             feed.innerHTML = "";
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             let displayPosts = [...window.allPosts];
-            
             let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
 
             if (displayPosts.length === 0) {
@@ -619,6 +633,9 @@
             displayPosts.forEach((data) => {
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
+                // Expiration check for Snap-Style 24h posts
+                if (data.expiresAt && Date.now() > data.expiresAt) return;
+
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
                 if (data.isFlagged && data.reports && data.reports.length >= 3 && !isUserAdmin()) return;
 
@@ -656,14 +673,18 @@
                 const upColor = isUpvoted ? 'var(--primary)' : 'inherit';
                 const downColor = isDownvoted ? 'var(--downvote)' : 'inherit';
 
-                // Viral badge check
                 const isViral = (data.upvotes || 0) >= 10;
                 const viralBadgeHTML = isViral ? `<span class="viral-badge">🔥 Viral</span>` : '';
+                
+                // Snap timer indicator
+                let timerBadgeHTML = "";
+                if (data.expiresAt) {
+                    const hoursLeft = Math.max(1, Math.ceil((data.expiresAt - Date.now()) / (1000 * 60 * 60)));
+                    timerBadgeHTML = `<span class="snap-timer"><i class="fa-regular fa-clock"></i> Disappears in ${hoursLeft}h</span>`;
+                }
 
-                // Reaction Counts
                 const reactions = data.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
                 const userReacted = data.userReactions || {};
-
                 const authorName = escapeHtml(data.userName) || "Anonymous Panda 🐼";
                 const authorAvatar = data.userPhoto ? `<img src="${data.userPhoto}" alt="User">` : '👻';
 
@@ -675,7 +696,7 @@
                                     <div class="avatar">${authorAvatar}</div>
                                     <div class="user-info">
                                         <h3>${authorName} ${viralBadgeHTML}</h3>
-                                        <p>${timeStr}</p>
+                                        <p>${timeStr} &bull; ${timerBadgeHTML}</p>
                                     </div>
                                 </div>
                                 <div>
@@ -691,7 +712,7 @@
                                 <div class="reaction-pill ${userReacted[currentUid] === 'lol' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'lol')">😂 <span>${reactions.lol || 0}</span></div>
                                 <div class="reaction-pill ${userReacted[currentUid] === 'relatable' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'relatable')">💀 <span>${reactions.relatable || 0}</span></div>
                                 <div class="reaction-pill ${userReacted[currentUid] === 'tea' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'tea')">☕ <span>${reactions.tea || 0}</span></div>
-                                <div class="reaction-pill ${userReacted[currentUid] === 'wholesome' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'wholesome')">❤️️ <span>${reactions.wholesome || 0}</span></div>
+                                <div class="reaction-pill ${userReacted[currentUid] === 'wholesome' ? 'active' : ''}" onclick="window.reactPost('${data.id}', 'wholesome')">❤ <span>${reactions.wholesome || 0}</span></div>
                             </div>
 
                             <div class="feed-stats">
@@ -761,20 +782,17 @@
                 reactions[reactionType] = Math.max(0, (reactions[reactionType] || 1) - 1);
                 delete userReactions[uid];
             } else {
-                if (prevReaction) {
-                    reactions[prevReaction] = Math.max(0, (reactions[prevReaction] || 1) - 1);
-                }
+                if (prevReaction) { reactions[prevReaction] = Math.max(0, (reactions[prevReaction] || 1) - 1); }
                 reactions[reactionType] = (reactions[reactionType] || 0) + 1;
                 userReactions[uid] = reactionType;
             }
 
-            try {
-                await updateDoc(postRef, { reactions: reactions, userReactions: userReactions });
-            } catch (e) { alert("Failed to react."); }
+            try { await updateDoc(postRef, { reactions: reactions, userReactions: userReactions }); } 
+            catch (e) { alert("Failed to react."); }
         };
 
         window.deletePost = async function(postId) {
-            if(confirm("Are you sure you want to delete this confession?")) {
+            if(confirm("Delete this confession?")) {
                 try {
                     await deleteDoc(doc(db, "confessions", postId));
                     window.createNotification("Post deleted successfully!", "fa-trash");
@@ -834,24 +852,34 @@
 
         window.postConfession = async function() {
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
-            const input = document.getElementById('confessionInput'); const btn = document.getElementById('submitPostBtn');
+            const input = document.getElementById('confessionInput'); 
+            const isDisappearing = document.getElementById('disappearingToggle').checked;
+            const btn = document.getElementById('submitPostBtn');
             let text = input.value.trim();
             if (text === "" && !window.currentImageBase64) return;
             
-            // Apply profanity filter
+            // Anti-Doxxing Guard Check
+            const doxxingWarning = checkDoxxing(text);
+            if (doxxingWarning) {
+                alert(doxxingWarning);
+                return;
+            }
+
             text = filterProfanity(text);
 
             btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Posting...'; btn.disabled = true;
             const formattedText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' onclick=\"window.searchHashtag('$2')\">$2</span>");
+            
             try {
+                const expiresAtTimestamp = isDisappearing ? Date.now() + (24 * 60 * 60 * 1000) : null;
                 const docRef = await addDoc(collection(db, "confessions"), {
                     text: formattedText, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
                     reactions: { lol: 0, relatable: 0, tea: 0, wholesome: 0 }, userReactions: {},
-                    reports: [], isFlagged: false,
+                    reports: [], isFlagged: false, expiresAt: expiresAtTimestamp,
                     timestamp: Date.now(), uid: window.currentUser.uid, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
                 let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
-                input.value = ""; window.removeImage(); window.closeModal(); window.createNotification("Confession posted live!", "fa-check");
+                input.value = ""; document.getElementById('disappearingToggle').checked = false; window.removeImage(); window.closeModal(); window.createNotification("Confession posted live!", "fa-check");
             } catch (e) { alert("Error posting."); }
             btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>'; btn.disabled = false;
         };
@@ -860,6 +888,10 @@
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const input = document.getElementById('commentInput-' + postId); let text = input.value.trim();
             if (text === "") return;
+            
+            const doxxingWarning = checkDoxxing(text);
+            if (doxxingWarning) { alert(doxxingWarning); return; }
+
             text = filterProfanity(text);
             const formattedCommentText = text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
             const commentData = { text: formattedCommentText, uid: window.currentUser.uid, userName: window.currentUser.displayName || "Anonymous Student", userPhoto: window.currentUser.photoURL || null, timestamp: Date.now() };
@@ -900,9 +932,7 @@
         window.submitReport = async function() { 
             const reasons = document.getElementsByName('reportReason'); 
             let selectedReason = ""; 
-            for(let i=0; i<reasons.length; i++) { 
-                if(reasons[i].checked) { selectedReason = reasons[i].value; reasons[i].checked = false; break; } 
-            } 
+            for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = reasons[i].value; reasons[i].checked = false; break; } } 
             if(!selectedReason) { window.createNotification("Select a reason first", "fa-circle-exclamation"); return; } 
             
             if (postToReport) {
@@ -918,7 +948,6 @@
                         return;
                     }
 
-                    const newReportCount = existingReports.length + 1;
                     await updateDoc(postRef, {
                         reports: arrayUnion({ uid: window.currentUser.uid, email: window.currentUser.email, reason: selectedReason, timestamp: Date.now() }),
                         isFlagged: true
@@ -935,9 +964,7 @@
         let ptrStartY = 0, ptrCurrentY = 0, isPulling = false, isRefreshing = false;
 
         document.body.addEventListener('touchstart', (e) => {
-            if (window.scrollY === 0 && !isRefreshing) {
-                ptrStartY = e.touches[0].clientY; isPulling = true; ptrContainer.style.transition = 'none'; 
-            }
+            if (window.scrollY === 0 && !isRefreshing) { ptrStartY = e.touches[0].clientY; isPulling = true; ptrContainer.style.transition = 'none'; }
         }, {passive: true});
 
         document.body.addEventListener('touchmove', (e) => {
