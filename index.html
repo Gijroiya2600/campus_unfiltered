@@ -85,7 +85,6 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* 🔥 PREMIUM SMOOTH SCROLL ANIMATION 🔥 */
         .card-reveal-wrapper {
             opacity: 0; 
             transform: translateY(50px) scale(0.94); 
@@ -384,7 +383,6 @@
     </nav>
 
     <script type="module">
-        // 🟢 FIX 5: Added 'where' to imports for secure querying
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, where } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
@@ -498,7 +496,6 @@
             if (unsubscribeFeed) unsubscribeFeed();
 
             let q;
-            // 🟢 FIX 5: Added where("isFlagged", "==", false) for security
             if (window.currentSort === 'trending') {
                 q = query(collection(db, "confessions"), where("isFlagged", "==", false), orderBy("upvotes", "desc"), limit(window.currentLimit));
             } else {
@@ -509,9 +506,17 @@
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
                 let fetchedPosts = [];
+                
                 snapshot.docs.forEach((docSnap) => {
                     const data = docSnap.data();
                     data.id = docSnap.id;
+
+                    if (data.expiresAt && Date.now() > data.expiresAt) {
+                        console.log("Deleted expired post from database:", data.id);
+                        deleteDoc(docSnap.ref).catch(e => console.log("Cleanup error:", e));
+                        return; 
+                    }
+
                     fetchedPosts.push(data);
                 });
 
@@ -542,10 +547,21 @@
                 isLoadingMore = false;
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
-                // ⚠️ IMPORTANT INDEX WARNING FOR THE USER ⚠️
+                
+                // 🔥 MOBILE FRIENDLY INDEX CREATOR ALERT 🔥
                 if (error.message.includes('index')) {
-                    alert("⚠️ FIREBASE INDEX REQUIRED ⚠️\n\nBhai, Inspector (F12) Console khol. Waha Firebase ne ek BLUE LINK diya hai. Uss link pe click karke 'Create Index' daba de. 2 min baad feed chal jayegi.");
-                    console.warn("👉 CLICK THE URL ABOVE IN THE ERROR TO CREATE THE FIREBASE INDEX 👈");
+                    const urlMatch = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+                    const url = urlMatch ? urlMatch[0] : '#';
+
+                    const alertBox = document.createElement('div');
+                    alertBox.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#18181b;border:2px solid #ef4444;padding:20px;z-index:9999;width:85%;max-width:400px;text-align:center;border-radius:12px;color:white;box-shadow: 0 10px 25px rgba(0,0,0,0.8);";
+                    alertBox.innerHTML = `
+                        <h3 style="color:#ef4444;margin-top:0;"><i class="fa-solid fa-triangle-exclamation"></i> Action Required</h3>
+                        <p style="font-size:0.9rem;color:#9ca3af;margin-bottom:20px;">Firebase needs an index to sort posts. Tap the button below to open Firebase Console and create it automatically.</p>
+                        <a href="${url}" target="_blank" style="display:inline-block;background:var(--primary);color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;width:100%;box-sizing:border-box;">Tap Here to Create Index</a>
+                        <button onclick="this.parentElement.remove()" style="display:block;margin:15px auto 0;background:transparent;border:1px solid #555;color:#ccc;padding:8px 20px;border-radius:5px;cursor:pointer;">Dismiss</button>
+                    `;
+                    document.body.appendChild(alertBox);
                 }
             });
         };
@@ -554,7 +570,7 @@
             if (isLoadingMore || !hasMorePosts) return;
             
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; // Search mode me no pagination
+            if (searchQuery) return; 
 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
@@ -631,7 +647,6 @@
 
         window.closeProfileModal = function() { triggerHaptic(15); document.getElementById('profileModal').style.display = 'none'; };
 
-        // 🟢 FIX 5: Admin Panel ab flagged posts direct secure backend se fetch karega
         window.openAdminModal = async function() {
             if (!isUserAdmin()) { alert("Access Denied."); return; }
             triggerHaptic(30);
@@ -727,9 +742,6 @@
             displayPosts.forEach((data) => {
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
-                if (data.expiresAt && Date.now() > data.expiresAt) return;
-                
-                // Extra safety client-side hide (though backend filter makes this mostly redundant now)
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
 
                 if (window.selectedTagFilter !== 'all' && !data.text.toLowerCase().includes(window.selectedTagFilter)) return;
@@ -1064,17 +1076,13 @@
             setTimeout(() => { img.style.position = 'static'; img.style.zIndex = 'auto'; }, 300);
         };
 
-        // 🟢 FIX 6: Image Upload Cancel Bug
         window.handleImageSelect = function(event) {
             triggerHaptic(15);
             const file = event.target.files[0];
-            
-            // Agar file select nahi ki aur pop up band kar diya toh memory clear kar do
             if (!file) {
                 window.removeImage();
                 return;
             }
-            
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
