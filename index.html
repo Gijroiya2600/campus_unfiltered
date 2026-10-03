@@ -384,8 +384,9 @@
     </nav>
 
     <script type="module">
+        // Added deleteField in imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -411,7 +412,6 @@
         let postToReport = null;
         window.currentImageBase64 = null;
         
-        // Dynamic Limit Pagination Setup
         let unsubscribeFeed = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
@@ -480,7 +480,6 @@
             return null;
         }
 
-        // 🔥 PERFECTED INTERSECTION OBSERVER TIMING 🔥
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) { 
@@ -495,7 +494,6 @@
             window.currentUser = user;
         });
 
-        // 🟢 FIX 2: DYNAMIC LIVE PAGINATION
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
@@ -550,7 +548,7 @@
             if (isLoadingMore || !hasMorePosts) return;
             
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; // Disable pagination while searching globally
+            if (searchQuery) return; 
 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
@@ -827,7 +825,6 @@
                 }
             });
 
-            // Re-attach observer for the newly added posts in feed
             const wrappers = feed.querySelectorAll('.card-reveal-wrapper');
             wrappers.forEach(wrapper => window.cardObserver.observe(wrapper));
         };
@@ -965,6 +962,7 @@
             }
         };
 
+        // 🟢 FIX 3: ATOMIC REACTIONS TO PREVENT DATA LOSS (OVERWRITE)
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
 
@@ -983,6 +981,8 @@
             post.userReactions = post.userReactions || {};
 
             const prevReaction = post.userReactions[uid];
+            
+            // Local UI Update for instant feedback
             if (prevReaction === reactionType) {
                 post.reactions[reactionType] = Math.max(0, (post.reactions[reactionType] || 1) - 1);
                 delete post.userReactions[uid];
@@ -994,9 +994,23 @@
 
             updatePostCardDOM(postId);
 
+            // Database Atomic Update
             try {
                 const postRef = doc(db, "confessions", postId);
-                await updateDoc(postRef, { reactions: post.reactions, userReactions: post.userReactions });
+                let updates = {};
+
+                if (prevReaction === reactionType) {
+                    updates[`reactions.${reactionType}`] = increment(-1);
+                    updates[`userReactions.${uid}`] = deleteField();
+                } else {
+                    updates[`reactions.${reactionType}`] = increment(1);
+                    updates[`userReactions.${uid}`] = reactionType;
+                    if (prevReaction) {
+                        updates[`reactions.${prevReaction}`] = increment(-1);
+                    }
+                }
+
+                await updateDoc(postRef, updates);
             } catch (e) {
                 console.error("Failed to react:", e);
             }
