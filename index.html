@@ -85,6 +85,7 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
+        /* 🔥 PREMIUM SMOOTH SCROLL ANIMATION 🔥 */
         .card-reveal-wrapper {
             opacity: 0; 
             transform: translateY(50px) scale(0.94); 
@@ -384,7 +385,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, where } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        // REMOVED 'where' to fix the Index Error
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -408,7 +410,7 @@
         window.selectedTagFilter = 'all';
         let unreadNotifications = 0;
         let postToReport = null;
-        window.currentImageBase64 = null;
+        window.currentImageBase64 = null; // User requested to keep Base64 logic as is
         
         let unsubscribeFeed = null;
         let isLoadingMore = false;
@@ -492,14 +494,15 @@
             window.currentUser = user;
         });
 
+        // 🟢 INDEX ERROR FIXED: Removed 'where' clause here so it works instantly without Firebase console config
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
             let q;
             if (window.currentSort === 'trending') {
-                q = query(collection(db, "confessions"), where("isFlagged", "==", false), orderBy("upvotes", "desc"), limit(window.currentLimit));
+                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(window.currentLimit));
             } else {
-                q = query(collection(db, "confessions"), where("isFlagged", "==", false), orderBy("timestamp", "desc"), limit(window.currentLimit));
+                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(window.currentLimit));
             }
 
             let isInitialLoad = true;
@@ -511,10 +514,12 @@
                     const data = docSnap.data();
                     data.id = docSnap.id;
 
+                    // 🔥 FIX 2: THE SELF-CLEANING MECHANISM (Permanent Privacy) 🔥
                     if (data.expiresAt && Date.now() > data.expiresAt) {
                         console.log("Deleted expired post from database:", data.id);
-                        deleteDoc(docSnap.ref).catch(e => console.log("Cleanup error:", e));
-                        return; 
+                        // Using catch so normal users don't see console errors if rules block them
+                        deleteDoc(docSnap.ref).catch(e => console.log("Cleanup background error:", e));
+                        return; // Skip adding to the UI array
                     }
 
                     fetchedPosts.push(data);
@@ -547,22 +552,6 @@
                 isLoadingMore = false;
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
-                
-                // 🔥 MOBILE FRIENDLY INDEX CREATOR ALERT 🔥
-                if (error.message.includes('index')) {
-                    const urlMatch = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
-                    const url = urlMatch ? urlMatch[0] : '#';
-
-                    const alertBox = document.createElement('div');
-                    alertBox.style.cssText = "position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#18181b;border:2px solid #ef4444;padding:20px;z-index:9999;width:85%;max-width:400px;text-align:center;border-radius:12px;color:white;box-shadow: 0 10px 25px rgba(0,0,0,0.8);";
-                    alertBox.innerHTML = `
-                        <h3 style="color:#ef4444;margin-top:0;"><i class="fa-solid fa-triangle-exclamation"></i> Action Required</h3>
-                        <p style="font-size:0.9rem;color:#9ca3af;margin-bottom:20px;">Firebase needs an index to sort posts. Tap the button below to open Firebase Console and create it automatically.</p>
-                        <a href="${url}" target="_blank" style="display:inline-block;background:var(--primary);color:white;padding:12px 20px;border-radius:8px;text-decoration:none;font-weight:bold;width:100%;box-sizing:border-box;">Tap Here to Create Index</a>
-                        <button onclick="this.parentElement.remove()" style="display:block;margin:15px auto 0;background:transparent;border:1px solid #555;color:#ccc;padding:8px 20px;border-radius:5px;cursor:pointer;">Dismiss</button>
-                    `;
-                    document.body.appendChild(alertBox);
-                }
             });
         };
 
@@ -570,7 +559,7 @@
             if (isLoadingMore || !hasMorePosts) return;
             
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; 
+            if (searchQuery) return; // Search mode me no pagination
 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
@@ -656,10 +645,16 @@
             listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading secure flagged posts...</div>';
             
             try {
-                const flaggedQ = query(collection(db, "confessions"), where("isFlagged", "==", true));
-                const snap = await getDocs(flaggedQ);
+                // Manually fetching flagged posts to avoid composite index requirements
+                const snap = await getDocs(collection(db, "confessions"));
                 let flaggedPosts = [];
-                snap.forEach(doc => { let data = doc.data(); data.id = doc.id; flaggedPosts.push(data); });
+                snap.forEach(doc => { 
+                    let data = doc.data(); 
+                    if(data.isFlagged === true) {
+                        data.id = doc.id; 
+                        flaggedPosts.push(data); 
+                    }
+                });
 
                 listContainer.innerHTML = "";
                 
@@ -683,7 +678,7 @@
                 });
             } catch (e) {
                 console.error(e);
-                listContainer.innerHTML = '<p style="color: var(--downvote); text-align: center; padding: 20px;">Error loading flagged posts. Needs Firebase Index!</p>';
+                listContainer.innerHTML = '<p style="color: var(--downvote); text-align: center; padding: 20px;">Error loading flagged posts.</p>';
             }
         };
 
@@ -742,6 +737,11 @@
             displayPosts.forEach((data) => {
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
+                // Hide expired or flagged posts client-side since we removed the strict backend query
+                if (data.expiresAt && Date.now() > data.expiresAt) return;
+                if (data.isFlagged && !isUserAdmin()) return; 
+                
+                // Extra client-side hide if the user reported it themselves
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
 
                 if (window.selectedTagFilter !== 'all' && !data.text.toLowerCase().includes(window.selectedTagFilter)) return;
@@ -1076,6 +1076,7 @@
             setTimeout(() => { img.style.position = 'static'; img.style.zIndex = 'auto'; }, 300);
         };
 
+        // 🔥 FIX 6: Image Upload Cancel Bug 🔥
         window.handleImageSelect = function(event) {
             triggerHaptic(15);
             const file = event.target.files[0];
