@@ -85,7 +85,7 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* 🔥 PREMIUM SMOOTH SCROLL ANIMATION (SCALE + TRANSFORM) 🔥 */
+        /* 🔥 PREMIUM SMOOTH SCROLL ANIMATION 🔥 */
         .card-reveal-wrapper {
             opacity: 0; 
             transform: translateY(50px) scale(0.94); 
@@ -384,7 +384,6 @@
     </nav>
 
     <script type="module">
-        // Added deleteField in imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
@@ -548,7 +547,7 @@
             if (isLoadingMore || !hasMorePosts) return;
             
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; 
+            if (searchQuery) return; // Search mode me no pagination
 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
@@ -962,7 +961,6 @@
             }
         };
 
-        // 🟢 FIX 3: ATOMIC REACTIONS TO PREVENT DATA LOSS (OVERWRITE)
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
 
@@ -982,7 +980,6 @@
 
             const prevReaction = post.userReactions[uid];
             
-            // Local UI Update for instant feedback
             if (prevReaction === reactionType) {
                 post.reactions[reactionType] = Math.max(0, (post.reactions[reactionType] || 1) - 1);
                 delete post.userReactions[uid];
@@ -994,7 +991,6 @@
 
             updatePostCardDOM(postId);
 
-            // Database Atomic Update
             try {
                 const postRef = doc(db, "confessions", postId);
                 let updates = {};
@@ -1145,14 +1141,44 @@
             window.setupFeedListener(); 
         };
 
-        window.searchHashtag = function(tag) { document.getElementById('searchContainer').style.display = 'block'; document.getElementById('searchInput').value = tag; window.scrollToTop(); window.searchPosts(); };
+        // 🟢 FIX 4: DEEP FETCH FOR SEARCH FUNCTIONALITY
+        window.searchPosts = function() { 
+            const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
+            
+            if (searchInput.length > 0 && window.currentLimit !== 100) {
+                window.currentLimit = 100; // Bump limit for deep search
+                window.setupFeedListener();
+            } else if (searchInput.length === 0 && window.currentLimit === 100) {
+                window.currentLimit = PAGE_SIZE; // Reset limit when search cleared
+                window.setupFeedListener();
+            } else {
+                window.renderFeed(); 
+            }
+        };
+
+        window.searchHashtag = function(tag) { 
+            document.getElementById('searchContainer').style.display = 'block'; 
+            document.getElementById('searchInput').value = tag; 
+            window.scrollToTop(); 
+            window.searchPosts(); 
+        };
+
         window.toggleSearch = function() { 
             triggerHaptic(20);
             const searchContainer = document.getElementById('searchContainer'); 
-            if (searchContainer.style.display === 'block') { searchContainer.style.display = 'none'; document.getElementById('searchInput').value = ''; window.searchPosts(); } 
-            else { searchContainer.style.display = 'block'; document.getElementById('searchInput').focus(); window.scrollToTop(); } 
+            if (searchContainer.style.display === 'block') { 
+                searchContainer.style.display = 'none'; 
+                document.getElementById('searchInput').value = ''; 
+                window.currentLimit = PAGE_SIZE; // Reset
+                window.setupFeedListener(); 
+            } 
+            else { 
+                searchContainer.style.display = 'block'; 
+                document.getElementById('searchInput').focus(); 
+                window.scrollToTop(); 
+            } 
         };
-        window.searchPosts = function() { window.renderFeed(); };
+
         window.openModal = function() { 
             triggerHaptic(25);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; } 
