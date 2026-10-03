@@ -384,8 +384,9 @@
     </nav>
 
     <script type="module">
+        // 🟢 FIX 5: Added 'where' to imports for secure querying
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
-        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, startAfter, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, where } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
         const firebaseConfig = {
@@ -497,10 +498,11 @@
             if (unsubscribeFeed) unsubscribeFeed();
 
             let q;
+            // 🟢 FIX 5: Added where("isFlagged", "==", false) for security
             if (window.currentSort === 'trending') {
-                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(window.currentLimit));
+                q = query(collection(db, "confessions"), where("isFlagged", "==", false), orderBy("upvotes", "desc"), limit(window.currentLimit));
             } else {
-                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(window.currentLimit));
+                q = query(collection(db, "confessions"), where("isFlagged", "==", false), orderBy("timestamp", "desc"), limit(window.currentLimit));
             }
 
             let isInitialLoad = true;
@@ -540,6 +542,11 @@
                 isLoadingMore = false;
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
+                // ⚠️ IMPORTANT INDEX WARNING FOR THE USER ⚠️
+                if (error.message.includes('index')) {
+                    alert("⚠️ FIREBASE INDEX REQUIRED ⚠️\n\nBhai, Inspector (F12) Console khol. Waha Firebase ne ek BLUE LINK diya hai. Uss link pe click karke 'Create Index' daba de. 2 min baad feed chal jayegi.");
+                    console.warn("👉 CLICK THE URL ABOVE IN THE ERROR TO CREATE THE FIREBASE INDEX 👈");
+                }
             });
         };
 
@@ -624,33 +631,45 @@
 
         window.closeProfileModal = function() { triggerHaptic(15); document.getElementById('profileModal').style.display = 'none'; };
 
-        window.openAdminModal = function() {
+        // 🟢 FIX 5: Admin Panel ab flagged posts direct secure backend se fetch karega
+        window.openAdminModal = async function() {
             if (!isUserAdmin()) { alert("Access Denied."); return; }
             triggerHaptic(30);
             window.closeProfileModal();
             document.getElementById('adminModal').style.display = 'flex';
             const listContainer = document.getElementById('reportedPostsList');
-            listContainer.innerHTML = "";
+            listContainer.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 20px;"><i class="fa-solid fa-spinner fa-spin"></i> Loading secure flagged posts...</div>';
             
-            const flaggedPosts = window.allPosts.filter(p => p.isFlagged && p.reports && p.reports.length > 0);
-            if (flaggedPosts.length === 0) {
-                listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending reports to review! 🎉</p>';
-                return;
-            }
+            try {
+                const flaggedQ = query(collection(db, "confessions"), where("isFlagged", "==", true));
+                const snap = await getDocs(flaggedQ);
+                let flaggedPosts = [];
+                snap.forEach(doc => { let data = doc.data(); data.id = doc.id; flaggedPosts.push(data); });
 
-            flaggedPosts.forEach(p => {
-                let reasonsSummary = p.reports.map(r => `• <b>${escapeHtml(r.reason)}</b> (by ${escapeHtml(r.email || 'User')})`).join('<br>');
-                listContainer.insertAdjacentHTML('beforeend', `
-                    <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; margin-bottom: 12px;">
-                        <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 0.9rem;"><b>Confession:</b> ${escapeHtml(p.text)}</p>
-                        <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: var(--downvote);"><b>Reports (${p.reports.length}):</b><br>${reasonsSummary}</p>
-                        <div style="display: flex; gap: 10px;">
-                            <button onclick="window.adminDeletePost('${p.id}')" style="background: var(--downvote); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Delete Permanently</button>
-                            <button onclick="window.dismissReport('${p.id}')" style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-check"></i> Dismiss Report</button>
+                listContainer.innerHTML = "";
+                
+                if (flaggedPosts.length === 0) {
+                    listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending reports to review! 🎉</p>';
+                    return;
+                }
+
+                flaggedPosts.forEach(p => {
+                    let reasonsSummary = p.reports.map(r => `• <b>${escapeHtml(r.reason)}</b> (by ${escapeHtml(r.email || 'User')})`).join('<br>');
+                    listContainer.insertAdjacentHTML('beforeend', `
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 12px; border-radius: 10px; margin-bottom: 12px;">
+                            <p style="margin: 0 0 8px 0; color: #d1d5db; font-size: 0.9rem;"><b>Confession:</b> ${escapeHtml(p.text)}</p>
+                            <p style="margin: 0 0 10px 0; font-size: 0.8rem; color: var(--downvote);"><b>Reports (${p.reports.length}):</b><br>${reasonsSummary}</p>
+                            <div style="display: flex; gap: 10px;">
+                                <button onclick="window.adminDeletePost('${p.id}')" style="background: var(--downvote); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-trash"></i> Delete Permanently</button>
+                                <button onclick="window.dismissReport('${p.id}')" style="background: rgba(255,255,255,0.1); color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; cursor: pointer;"><i class="fa-solid fa-check"></i> Dismiss Report</button>
+                            </div>
                         </div>
-                    </div>
-                `);
-            });
+                    `);
+                });
+            } catch (e) {
+                console.error(e);
+                listContainer.innerHTML = '<p style="color: var(--downvote); text-align: center; padding: 20px;">Error loading flagged posts. Needs Firebase Index!</p>';
+            }
         };
 
         window.closeAdminModal = function() { triggerHaptic(15); document.getElementById('adminModal').style.display = 'none'; };
@@ -709,8 +728,9 @@
                 const currentUid = window.currentUser ? window.currentUser.uid : null;
                 
                 if (data.expiresAt && Date.now() > data.expiresAt) return;
+                
+                // Extra safety client-side hide (though backend filter makes this mostly redundant now)
                 if (currentUid && data.reports && data.reports.some(r => r.uid === currentUid)) return;
-                if (data.isFlagged && data.reports && data.reports.length >= 3 && !isUserAdmin()) return;
 
                 if (window.selectedTagFilter !== 'all' && !data.text.toLowerCase().includes(window.selectedTagFilter)) return;
                 if (searchQuery && !data.text.toLowerCase().includes(searchQuery)) return;
@@ -1044,10 +1064,17 @@
             setTimeout(() => { img.style.position = 'static'; img.style.zIndex = 'auto'; }, 300);
         };
 
+        // 🟢 FIX 6: Image Upload Cancel Bug
         window.handleImageSelect = function(event) {
             triggerHaptic(15);
             const file = event.target.files[0];
-            if (!file) return;
+            
+            // Agar file select nahi ki aur pop up band kar diya toh memory clear kar do
+            if (!file) {
+                window.removeImage();
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
@@ -1141,7 +1168,6 @@
             window.setupFeedListener(); 
         };
 
-        // 🟢 FIX 4: DEEP FETCH FOR SEARCH FUNCTIONALITY
         window.searchPosts = function() { 
             const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
             
