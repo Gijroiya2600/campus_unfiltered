@@ -88,14 +88,14 @@
         /* 🔥 PREMIUM SMOOTH SCROLL ANIMATION (SCALE + TRANSFORM) 🔥 */
         .card-reveal-wrapper {
             opacity: 0; 
-            transform: translateY(50px) scale(0.94); /* Starts lower and slightly zoomed out */
-            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); /* Buttery smooth curve */
+            transform: translateY(50px) scale(0.94); 
+            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); 
             will-change: transform, opacity; 
             margin-bottom: 24px;
         }
         .card-reveal-wrapper.show { 
             opacity: 1; 
-            transform: translateY(0) scale(1); /* Pops perfectly into place */
+            transform: translateY(0) scale(1); 
         }
 
         .card { 
@@ -411,11 +411,12 @@
         let postToReport = null;
         window.currentImageBase64 = null;
         
-        let lastVisibleDoc = null;
+        // Dynamic Limit Pagination Setup
         let unsubscribeFeed = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
         const PAGE_SIZE = 10;
+        window.currentLimit = 10;
         
         const ADMIN_EMAIL = "klak50506@gmail.com";
         const BAD_WORDS = ["gali1", "gali2"]; 
@@ -494,14 +495,15 @@
             window.currentUser = user;
         });
 
+        // 🟢 FIX 2: DYNAMIC LIVE PAGINATION
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
 
             let q;
             if (window.currentSort === 'trending') {
-                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(PAGE_SIZE));
+                q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), limit(window.currentLimit));
             } else {
-                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(PAGE_SIZE));
+                q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), limit(window.currentLimit));
             }
 
             let isInitialLoad = true;
@@ -514,16 +516,7 @@
                     fetchedPosts.push(data);
                 });
 
-                if (snapshot.docs.length > 0) {
-                    lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
-                } else {
-                    lastVisibleDoc = null;
-                }
-
-                const map = new Map();
-                window.allPosts.forEach(p => map.set(p.id, p));
-                fetchedPosts.forEach(p => map.set(p.id, p));
-                window.allPosts = Array.from(map.values());
+                window.allPosts = fetchedPosts;
 
                 if (window.currentSort === 'trending') {
                     window.allPosts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
@@ -531,7 +524,7 @@
                     window.allPosts.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
                 }
 
-                if (isInitialLoad || fetchedPosts.length !== window.allPosts.length) {
+                if (isInitialLoad || fetchedPosts.length !== document.querySelectorAll('.post-item').length) {
                     window.renderFeed();
                     isInitialLoad = false;
                 } else {
@@ -539,66 +532,32 @@
                 }
 
                 const indicator = document.getElementById('loadingMoreIndicator');
-                if (snapshot.docs.length < PAGE_SIZE) {
+                if (snapshot.docs.length < window.currentLimit) {
                     hasMorePosts = false;
                     if (indicator) indicator.style.display = 'none';
-                } else { hasMorePosts = true; }
-
+                } else { 
+                    hasMorePosts = true; 
+                    if (indicator) indicator.style.display = 'none';
+                }
+                
+                isLoadingMore = false;
             }, (error) => {
                 console.error("Firestore snapshot error:", error);
             });
         };
 
         window.loadMorePosts = async function() {
-            if (isLoadingMore || !hasMorePosts || !lastVisibleDoc) return;
+            if (isLoadingMore || !hasMorePosts) return;
+            
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; 
+            if (searchQuery) return; // Disable pagination while searching globally
 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
             if (indicator) indicator.style.display = 'block';
 
-            try {
-                let q;
-                if (window.currentSort === 'trending') {
-                    q = query(collection(db, "confessions"), orderBy("upvotes", "desc"), startAfter(lastVisibleDoc), limit(PAGE_SIZE));
-                } else {
-                    q = query(collection(db, "confessions"), orderBy("timestamp", "desc"), startAfter(lastVisibleDoc), limit(PAGE_SIZE));
-                }
-
-                const snapshot = await getDocs(q);
-                let fetchedPosts = [];
-                snapshot.forEach((docSnap) => {
-                    const data = docSnap.data();
-                    data.id = docSnap.id;
-                    fetchedPosts.push(data);
-                });
-
-                if (snapshot.docs.length > 0) {
-                    lastVisibleDoc = snapshot.docs[snapshot.docs.length - 1];
-                } else {
-                    hasMorePosts = false;
-                    if (indicator) indicator.style.display = 'none';
-                }
-
-                if (fetchedPosts.length > 0) {
-                    const map = new Map();
-                    window.allPosts.forEach(p => map.set(p.id, p));
-                    fetchedPosts.forEach(p => map.set(p.id, p));
-                    window.allPosts = Array.from(map.values());
-                    window.renderFeed();
-                }
-
-                if (snapshot.docs.length < PAGE_SIZE) {
-                    hasMorePosts = false;
-                    if (indicator) indicator.style.display = 'none';
-                }
-            } catch (e) {
-                console.error("Error loading more posts:", e);
-            } finally {
-                isLoadingMore = false;
-                if (indicator && hasMorePosts) indicator.style.display = 'none';
-            }
+            window.currentLimit += PAGE_SIZE; 
+            window.setupFeedListener();
         };
 
         window.addEventListener('scroll', () => {
@@ -1165,7 +1124,9 @@
             document.getElementById('latestBtn').classList.remove('active'); 
             document.getElementById('trendingBtn').classList.remove('active'); 
             document.getElementById(type + 'Btn').classList.add('active'); 
+            
             window.currentSort = type; 
+            window.currentLimit = PAGE_SIZE; // Reset limit on sort change
             hasMorePosts = true;
             window.setupFeedListener(); 
         };
