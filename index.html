@@ -131,8 +131,9 @@
         .comments-section { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.2s ease, margin 0.2s ease; opacity: 0; border-top: none; padding-top: 0; margin-top: 0; }
         .comments-section.show-comments { max-height: 500px; opacity: 1; border-top: 1px solid var(--border-color); margin-top: 12px; padding-top: 12px; }
 
-        .comment-input-area { display: flex; gap: 8px; margin-bottom: 12px; }
-        .comment-input-area input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 9999px; font-size: 0.9rem; outline: none; }
+        .comment-input-wrapper { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+        .comment-input-row { display: flex; gap: 8px; }
+        .comment-input-row input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 9999px; font-size: 0.9rem; outline: none; }
         .comment-btn { background-color: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.8rem; cursor: pointer; }
         .comment-item { background: rgba(255, 255, 255, 0.03); padding: 10px 12px; border-radius: 12px; margin-bottom: 8px; font-size: 0.85rem; color: #d1d5db; }
         .comment-meta { font-size: 0.75rem; color: var(--text-muted); margin-bottom: 4px; font-weight: 500; display: flex; align-items: center; gap: 6px; }
@@ -194,7 +195,6 @@
         <div id="notifList" class="notif-list"><div class="notif-item text-muted" id="emptyNotif">No new notifications</div></div>
     </div>
 
-    <!-- Modals -->
     <div id="themeModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 350px; text-align: center;">
             <div class="modal-header">
@@ -219,6 +219,7 @@
                 <button class="close-btn" onclick="window.closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="profileDetails" style="text-align: center; margin-bottom: 20px;"></div>
+            
             <h3 style="font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Confessions</h3>
             <div id="myProfilePostsList" style="margin-top: 15px;"></div>
         </div>
@@ -257,9 +258,15 @@
             </div>
             <textarea id="confessionInput" rows="4" placeholder="Spill the tea... use #hashtags!"></textarea>
             
-            <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 15px; cursor: pointer;">
-                <input type="checkbox" id="disappearingToggle" style="accent-color: var(--primary);"> Disappear after 24 hours (Snap-style ⏱)
-            </label>
+            <!-- 🔥 Reddit Style Anonymous Toggles 🔥 -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">
+                    <input type="checkbox" id="anonymousToggle" style="accent-color: var(--primary);" checked> 👁️ Hide My Name
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); cursor: pointer;">
+                    <input type="checkbox" id="disappearingToggle" style="accent-color: var(--primary);"> ⏱️ 24h Snap
+                </label>
+            </div>
 
             <input type="file" id="mediaUpload" style="display: none;" accept="image/*" onchange="window.handleImageSelect(event)">
             <div id="imagePreviewContainer" class="image-preview-container">
@@ -336,7 +343,6 @@
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
-        // 🔥 FIREBASE CONFIGURATION (API Keys public reh sakti hain, Rules secure hone chahiye) 🔥
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
             authDomain: "unfiltered-campus.firebaseapp.com",
@@ -352,21 +358,19 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
-        // 🌟 CLEAN CONSTANTS (Fix #14) 🌟
         const PAGE_SIZE = 10;
         const IMAGE_MAX_WIDTH = 1200;
         const IMAGE_MAX_SIZE_BYTES = 950000;
         const ADMIN_EMAIL = "klak50506@gmail.com";
-        const BAD_WORDS = ["gali1", "gali2"]; // Basic Client-Side Filter
+        const BAD_WORDS = ["gali1", "gali2"]; 
 
-        // Global Variables
         window.currentUser = null;
         window.allPosts = [];
         window.currentSort = 'latest';
         window.selectedTagFilter = 'all';
         let unreadNotifications = 0;
         let postToReport = null;
-        window.currentImageBase64 = null; // Left as Base64 per request
+        window.currentImageBase64 = null; 
         
         let unsubscribeFeed = null;
         let isLoadingMore = false;
@@ -390,16 +394,13 @@
         window.openThemeModal = function() { triggerHaptic(20); document.getElementById('themeModal').style.display = 'flex'; };
         window.closeThemeModal = function() { triggerHaptic(15); document.getElementById('themeModal').style.display = 'none'; };
         window.setTheme = function(color) {
-            triggerHaptic(40);
-            document.documentElement.style.setProperty('--primary', color);
-            localStorage.setItem('app_accent_color', color);
-            window.closeThemeModal();
+            triggerHaptic(40); document.documentElement.style.setProperty('--primary', color);
+            localStorage.setItem('app_accent_color', color); window.closeThemeModal();
             window.createNotification("Theme updated successfully!", "fa-palette");
         };
 
         function isUserAdmin() { return window.currentUser && window.currentUser.email === ADMIN_EMAIL; }
 
-        // 🛡️ XSS PROTECTION (Fix #4 & #15 part 1) 🛡️
         function escapeHtml(str) {
             if (!str) return '';
             return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
@@ -408,7 +409,6 @@
         function sanitizeUrl(url) {
             if (!url) return '';
             const safeUrl = String(url).trim();
-            // Block javascript: or vbscript: malicious links
             if (safeUrl.startsWith('javascript:') || safeUrl.startsWith('vbscript:')) return '';
             return escapeHtml(safeUrl);
         }
@@ -419,7 +419,6 @@
             return cleanText;
         }
 
-        // 🛡️ ADVANCED ANTI-DOXXING (Fix #3) 🛡️
         function checkDoxxing(text) {
             const stripped = text.replace(/\D/g, ''); 
             const phoneRegex = /(\b\d{10}\b)|(\b\d{1,4}\d{10}\b)/; 
@@ -452,11 +451,9 @@
 
             unsubscribeFeed = onSnapshot(q, (snapshot) => {
                 let fetchedPosts = [];
-                
                 snapshot.docs.forEach((docSnap) => {
                     const data = docSnap.data();
                     data.id = docSnap.id;
-
                     if (data.expiresAt && Date.now() > data.expiresAt) {
                         deleteDoc(docSnap.ref).catch(e => console.log("Cleanup background error:", e));
                         return; 
@@ -466,7 +463,6 @@
 
                 window.allPosts = fetchedPosts;
                 
-                // Fallback client sort just to maintain UI stability 
                 if (window.currentSort === 'trending') {
                     window.allPosts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
                 } else {
@@ -482,23 +478,18 @@
 
                 const indicator = document.getElementById('loadingMoreIndicator');
                 if (snapshot.docs.length < window.currentLimit) {
-                    hasMorePosts = false;
-                    if (indicator) indicator.style.display = 'none';
+                    hasMorePosts = false; if (indicator) indicator.style.display = 'none';
                 } else { 
-                    hasMorePosts = true; 
-                    if (indicator) indicator.style.display = 'none';
+                    hasMorePosts = true; if (indicator) indicator.style.display = 'none';
                 }
-                
                 isLoadingMore = false;
-            }, (error) => {
-                console.error("Firestore snapshot error:", error);
-            });
+            }, (error) => { console.error("Firestore snapshot error:", error); });
         };
 
         window.loadMorePosts = async function() {
             if (isLoadingMore || !hasMorePosts) return;
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; // Search mode me no pagination
+            if (searchQuery) return; 
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
             if (indicator) indicator.style.display = 'block';
@@ -537,7 +528,6 @@
 
         window.closeLoginPrompt = function() { triggerHaptic(15); document.getElementById('loginPromptModal').style.display = 'none'; };
 
-        // 🛡️ User Profile - Strict XSS Sanitization 🛡️
         window.openProfileModal = function() {
             triggerHaptic(25);
             const user = window.currentUser;
@@ -648,7 +638,6 @@
             window.renderFeed();
         };
 
-        // 🛡️ HTML Rendering with Strict Sanitization 🛡️
         window.renderFeed = function() {
             const openCommentsState = {};
             document.querySelectorAll('.comments-section.show-comments').forEach(el => {
@@ -703,7 +692,8 @@
                 const safeImageBase64 = sanitizeUrl(data.imageUrl);
                 const imageHTML = safeImageBase64 ? `<img src="${safeImageBase64}" class="feed-img" ontouchstart="window.startPinch(event, this)" ontouchmove="window.movePinch(event, this)" ontouchend="window.endPinch(event, this)">` : '';
 
-                const isMyPost = (window.currentUser && data.uid === window.currentUser.uid);
+                let isMyPost = false;
+                if (window.currentUser && data.uid === window.currentUser.uid) { isMyPost = true; }
                 const deleteBtnHTML = (isMyPost || isUserAdmin()) ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
                 const isUpvoted = currentUid && data.upvotedBy && data.upvotedBy.includes(currentUid);
@@ -722,10 +712,12 @@
 
                 const reactions = data.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
                 const userReacted = data.userReactions || {};
+                
+                // Author logic handled gracefully with anonymity
                 const authorName = escapeHtml(data.userName) || "Anonymous Panda 🐼";
                 const safeAuthorPhoto = sanitizeUrl(data.userPhoto);
                 const authorAvatar = safeAuthorPhoto ? `<img src="${safeAuthorPhoto}" alt="User">` : '👻';
-                const postAdminBadge = (data.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
+                const postAdminBadge = (data.email === ADMIN_EMAIL && data.userName !== "Anonymous 🕵️") ? ` ${crownSVG}` : '';
 
                 const safeParsedText = escapeHtml(data.text).replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' data-tag='$2' onclick='window.searchHashtag(this.dataset.tag)'>$2</span>");
 
@@ -766,9 +758,15 @@
                                 </div>
                             </div>
                             <div class="comments-section" id="comments-${data.id}">
-                                <div class="comment-input-area">
-                                    <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
-                                    <button class="comment-btn" onclick="window.addComment('${data.id}')">Reply</button>
+                                <!-- 🔥 Reddit Style Anonymous Comment Toggle 🔥 -->
+                                <div class="comment-input-wrapper">
+                                    <div class="comment-input-row">
+                                        <input type="text" id="commentInput-${data.id}" placeholder="Add a comment...">
+                                        <button class="comment-btn" onclick="window.addComment('${data.id}')">Reply</button>
+                                    </div>
+                                    <label style="font-size: 0.75rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 5px; padding-left: 10px;">
+                                        <input type="checkbox" id="anonComment-${data.id}" style="accent-color: var(--primary);" checked> 👁️ Comment anonymously
+                                    </label>
                                 </div>
                                 <div class="comments-list">${commentsHTML}</div>
                             </div>
@@ -827,7 +825,7 @@
                     const cName = escapeHtml(c.userName) || "Anonymous Student";
                     const safeUserPhoto = sanitizeUrl(c.userPhoto);
                     const cAvatar = safeUserPhoto ? `<img src="${safeUserPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
-                    const cAdminBadge = (c.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
+                    const cAdminBadge = (c.email === ADMIN_EMAIL && c.userName !== "Anonymous 🕵️") ? ` ${crownSVG}` : '';
                     const safeCommentText = escapeHtml(c.text);
                     commentsHTML += `
                         <div class="comment-item">
@@ -995,12 +993,13 @@
             document.getElementById('mediaUpload').value = ""; 
         };
 
-        // 🛡️ TIME-TRAVEL FIX: Uses Server Timestamp (Fix #11) 🛡️
+        // 🔥 Backend track rakhega par public feed pe naam Anoynmous jayega 🔥
         window.postConfession = async function() {
             triggerHaptic(30);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const input = document.getElementById('confessionInput'); 
             const isDisappearing = document.getElementById('disappearingToggle').checked;
+            const isAnonymous = document.getElementById('anonymousToggle').checked;
             const btn = document.getElementById('submitPostBtn');
             let text = input.value.trim();
             if (text === "" && !window.currentImageBase64) return;
@@ -1014,13 +1013,18 @@
             
             try {
                 const expiresAtTimestamp = isDisappearing ? Date.now() + (24 * 60 * 60 * 1000) : null;
+                const finalUserName = isAnonymous ? "Anonymous 🕵️" : window.currentUser.displayName;
+                const finalUserPhoto = isAnonymous ? "" : window.currentUser.photoURL;
+
                 const docRef = await addDoc(collection(db, "confessions"), {
                     text: text, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
                     reactions: { lol: 0, relatable: 0, tea: 0, wholesome: 0 }, userReactions: {},
                     reports: [], isFlagged: false, expiresAt: expiresAtTimestamp,
-                    timestamp: Date.now(), serverTime: serverTimestamp(), // Secure server time
-                    uid: window.currentUser.uid, email: window.currentUser.email, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
+                    timestamp: Date.now(), serverTime: serverTimestamp(),
+                    uid: window.currentUser.uid, email: window.currentUser.email, 
+                    userName: finalUserName, userPhoto: finalUserPhoto
                 });
+                
                 input.value = ""; document.getElementById('disappearingToggle').checked = false; window.removeImage(); window.closeModal(); window.createNotification("Confession posted live!", "fa-check");
             } catch (e) { alert("Error posting."); }
             btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>'; btn.disabled = false;
@@ -1037,12 +1041,17 @@
 
             text = filterProfanity(text);
             
+            const anonCheckbox = document.getElementById('anonComment-' + postId);
+            const isAnonymous = anonCheckbox ? anonCheckbox.checked : true;
+            const finalCName = isAnonymous ? "Anonymous 🕵️" : window.currentUser.displayName;
+            const finalCPhoto = isAnonymous ? "" : window.currentUser.photoURL;
+
             const commentData = { 
                 text: text, 
                 uid: window.currentUser.uid, 
                 email: window.currentUser.email,
-                userName: window.currentUser.displayName || "Anonymous Student", 
-                userPhoto: window.currentUser.photoURL || null, 
+                userName: finalCName, 
+                userPhoto: finalCPhoto, 
                 timestamp: Date.now() 
             };
 
@@ -1113,13 +1122,12 @@
             if (window.scrollY === 0 && !isRefreshing) { ptrStartY = e.touches[0].clientY; isPulling = true; ptrContainer.style.transition = 'none'; }
         }, {passive: true});
 
-        // 🛡️ SCROLL FIX: passive false allowed for touchmove (Fix #16) 🛡️
         document.body.addEventListener('touchmove', (e) => {
             if (!isPulling || isRefreshing) return;
             ptrCurrentY = e.touches[0].clientY;
             let pullDistance = ptrCurrentY - ptrStartY;
             if (pullDistance > 0 && window.scrollY === 0) {
-                if (e.cancelable) e.preventDefault(); // Safe to call now
+                if (e.cancelable) e.preventDefault(); 
                 let visualDistance = pullDistance * 0.35; 
                 if (visualDistance > 55) visualDistance = 55 + (visualDistance - 55) * 0.2; 
                 ptrContainer.style.transform = `translateX(-50%) translateY(${visualDistance}px)`;
