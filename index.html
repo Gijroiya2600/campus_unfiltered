@@ -85,36 +85,13 @@
         .filter-btn { background: var(--card-bg); border: 1px solid var(--border-color); color: var(--text-muted); padding: 8px 16px; border-radius: 9999px; font-weight: bold; font-size: 0.85rem; cursor: pointer; transition: 0.2s; }
         .filter-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
         
-        /* 🔥 PREMIUM SMOOTH SCROLL ANIMATION 🔥 */
-        .card-reveal-wrapper {
-            opacity: 0; 
-            transform: translateY(50px) scale(0.94); 
-            transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); 
-            will-change: transform, opacity; 
-            margin-bottom: 24px;
-        }
-        .card-reveal-wrapper.show { 
-            opacity: 1; 
-            transform: translateY(0) scale(1); 
-        }
+        .card-reveal-wrapper { opacity: 0; transform: translateY(50px) scale(0.94); transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1); will-change: transform, opacity; margin-bottom: 24px; }
+        .card-reveal-wrapper.show { opacity: 1; transform: translateY(0) scale(1); }
 
-        .card { 
-            background-color: var(--card-bg); border: 1px solid var(--border-color); 
-            border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
-        }
+        .card { background-color: var(--card-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 16px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
         
-        @keyframes shimmer {
-            0% { background-position: -200px 0; }
-            100% { background-position: calc(200px + 100%) 0; }
-        }
-        .skeleton-card {
-            background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%);
-            background-size: 400px 100%;
-            animation: shimmer 1.5s infinite;
-            height: 180px;
-            border-radius: 16px;
-            margin-bottom: 24px;
-        }
+        @keyframes shimmer { 0% { background-position: -200px 0; } 100% { background-position: calc(200px + 100%) 0; } }
+        .skeleton-card { background: linear-gradient(90deg, #18181b 25%, #27272a 50%, #18181b 75%); background-size: 400px 100%; animation: shimmer 1.5s infinite; height: 180px; border-radius: 16px; margin-bottom: 24px; }
 
         .feed-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
         .user-block { display: flex; align-items: center; }
@@ -138,50 +115,21 @@
         .feed-stats div { cursor: pointer; display: flex; align-items: center; }
         .feed-stats i { margin-right: 5px; }
         
-        .neon-crown {
-            width: 20px;
-            height: 16px;
-            display: inline-block;
-            vertical-align: middle;
-            animation: neonPulse 2s ease-in-out infinite alternate;
-        }
-        @keyframes neonPulse {
-            0% { filter: drop-shadow(0 0 2px #ffcc33) drop-shadow(0 0 6px #e69500); }
-            100% { filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 12px #ffab1a) drop-shadow(0 0 20px #e68a00); }
-        }
+        .neon-crown { width: 20px; height: 16px; display: inline-block; vertical-align: middle; animation: neonPulse 2s ease-in-out infinite alternate; }
+        @keyframes neonPulse { 0% { filter: drop-shadow(0 0 2px #ffcc33) drop-shadow(0 0 6px #e69500); } 100% { filter: drop-shadow(0 0 4px #ffffff) drop-shadow(0 0 12px #ffab1a) drop-shadow(0 0 20px #e68a00); } }
 
-        .smooth-scale {
-            transform: scale(1.2);
-            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
+        .smooth-scale { transform: scale(1.2); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
         .reaction-bar { display: flex; gap: 10px; }
-        .reaction-pill { 
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; 
-            transition: transform 0.15s ease, background-color 0.15s, border-color 0.15s, color 0.15s; 
-        }
+        .reaction-pill { background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); padding: 4px 10px; border-radius: 9999px; font-size: 0.8rem; color: var(--text-muted); display: flex; align-items: center; gap: 5px; cursor: pointer; transition: transform 0.15s ease, background-color 0.15s, border-color 0.15s, color 0.15s; }
         .reaction-pill:active { transform: scale(0.9); }
         .reaction-pill:hover { border-color: var(--primary); color: white; }
         .reaction-pill.active { background: rgba(139, 92, 246, 0.2); border-color: var(--primary); color: white; }
 
         .share-btn:hover { color: var(--whatsapp); }
         
-        .comments-section {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.2s ease, margin 0.2s ease;
-            opacity: 0;
-            border-top: none;
-            padding-top: 0;
-            margin-top: 0;
-        }
-        .comments-section.show-comments {
-            max-height: 500px;
-            opacity: 1;
-            border-top: 1px solid var(--border-color);
-            margin-top: 12px;
-            padding-top: 12px;
-        }
+        .comments-section { max-height: 0; overflow: hidden; transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease, padding 0.2s ease, margin 0.2s ease; opacity: 0; border-top: none; padding-top: 0; margin-top: 0; }
+        .comments-section.show-comments { max-height: 500px; opacity: 1; border-top: 1px solid var(--border-color); margin-top: 12px; padding-top: 12px; }
 
         .comment-input-area { display: flex; gap: 8px; margin-bottom: 12px; }
         .comment-input-area input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--border-color); color: white; padding: 8px 12px; border-radius: 9999px; font-size: 0.9rem; outline: none; }
@@ -246,6 +194,7 @@
         <div id="notifList" class="notif-list"><div class="notif-item text-muted" id="emptyNotif">No new notifications</div></div>
     </div>
 
+    <!-- Modals -->
     <div id="themeModal" class="modal-overlay">
         <div class="modal-content" style="max-width: 350px; text-align: center;">
             <div class="modal-header">
@@ -270,7 +219,6 @@
                 <button class="close-btn" onclick="window.closeProfileModal()"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="profileDetails" style="text-align: center; margin-bottom: 20px;"></div>
-            
             <h3 style="font-size: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 8px;">My Confessions</h3>
             <div id="myProfilePostsList" style="margin-top: 15px;"></div>
         </div>
@@ -384,11 +332,11 @@
     </nav>
 
     <script type="module">
-        // Added serverTimestamp for extra security against time-travel hacks
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
         import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, limit, getDocs, doc, updateDoc, arrayUnion, arrayRemove, deleteDoc, increment, deleteField, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 
+        // 🔥 FIREBASE CONFIGURATION (API Keys public reh sakti hain, Rules secure hone chahiye) 🔥
         const firebaseConfig = {
             apiKey: "AIzaSyDjXcIiY_4T6VNNGK9D95PouHfrbbGuUvA",
             authDomain: "unfiltered-campus.firebaseapp.com",
@@ -404,31 +352,29 @@
         const auth = getAuth(app);
         const provider = new GoogleAuthProvider();
 
+        // 🌟 CLEAN CONSTANTS (Fix #14) 🌟
+        const PAGE_SIZE = 10;
+        const IMAGE_MAX_WIDTH = 1200;
+        const IMAGE_MAX_SIZE_BYTES = 950000;
+        const ADMIN_EMAIL = "klak50506@gmail.com";
+        const BAD_WORDS = ["gali1", "gali2"]; // Basic Client-Side Filter
+
+        // Global Variables
         window.currentUser = null;
         window.allPosts = [];
         window.currentSort = 'latest';
         window.selectedTagFilter = 'all';
         let unreadNotifications = 0;
         let postToReport = null;
-        window.currentImageBase64 = null;
+        window.currentImageBase64 = null; // Left as Base64 per request
         
         let unsubscribeFeed = null;
         let isLoadingMore = false;
         let hasMorePosts = true;
-        const PAGE_SIZE = 10;
-        window.currentLimit = 10;
-        
-        const ADMIN_EMAIL = "klak50506@gmail.com";
-        const BAD_WORDS = ["gali1", "gali2"]; 
+        window.currentLimit = PAGE_SIZE;
 
         const crownSVG = `<svg class="neon-crown" viewBox="0 0 100 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <defs>
-                <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stop-color="#ff9900" />
-                    <stop offset="50%" stop-color="#ffcc33" />
-                    <stop offset="100%" stop-color="#cc5200" />
-                </linearGradient>
-            </defs>
+            <defs><linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff9900" /><stop offset="50%" stop-color="#ffcc33" /><stop offset="100%" stop-color="#cc5200" /></linearGradient></defs>
             <path d="M12 32 L32 46 L50 16 L68 46 L88 32 L81 60 L19 60 Z" stroke="url(#neonGradient)" stroke-width="2.3" stroke-linejoin="round" stroke-linecap="round"/>
             <path d="M32 46 L37 30 L43 40" stroke="url(#neonGradient)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
             <path d="M68 46 L63 30 L57 40" stroke="url(#neonGradient)" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>
@@ -436,11 +382,7 @@
             <path d="M21 68 C36 72, 64 72, 79 68" stroke="url(#neonGradient)" stroke-width="1.5" stroke-linecap="round"/>
         </svg>`;
 
-        function triggerHaptic(ms = 30) {
-            if ("vibrate" in navigator) {
-                try { navigator.vibrate(ms); } catch (e) {}
-            }
-        }
+        function triggerHaptic(ms = 30) { if ("vibrate" in navigator) { try { navigator.vibrate(ms); } catch (e) {} } }
 
         const savedTheme = localStorage.getItem('app_accent_color');
         if (savedTheme) { document.documentElement.style.setProperty('--primary', savedTheme); }
@@ -457,24 +399,31 @@
 
         function isUserAdmin() { return window.currentUser && window.currentUser.email === ADMIN_EMAIL; }
 
+        // 🛡️ XSS PROTECTION (Fix #4 & #15 part 1) 🛡️
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+            return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+        
+        function sanitizeUrl(url) {
+            if (!url) return '';
+            const safeUrl = String(url).trim();
+            // Block javascript: or vbscript: malicious links
+            if (safeUrl.startsWith('javascript:') || safeUrl.startsWith('vbscript:')) return '';
+            return escapeHtml(safeUrl);
         }
 
         function filterProfanity(text) {
             let cleanText = text;
-            BAD_WORDS.forEach(word => {
-                const regex = new RegExp(word, 'gi');
-                cleanText = cleanText.replace(regex, '***');
-            });
+            BAD_WORDS.forEach(word => { const regex = new RegExp(word, 'gi'); cleanText = cleanText.replace(regex, '***'); });
             return cleanText;
         }
 
+        // 🛡️ ADVANCED ANTI-DOXXING (Fix #3) 🛡️
         function checkDoxxing(text) {
-            const stripped = text.replace(/[\s\-\(\)\+]/g, '');
-            const phoneRegex = /(\b\d{10}\b)|([6-9]\d{9})/;
-            if (phoneRegex.test(stripped)) {
+            const stripped = text.replace(/\D/g, ''); 
+            const phoneRegex = /(\b\d{10}\b)|(\b\d{1,4}\d{10}\b)/; 
+            if (stripped.length >= 10 && phoneRegex.test(stripped)) {
                 return "⚠️ Anti-Doxxing Warning: Your text contains a 10-digit number. Please avoid sharing personal phone numbers to protect student privacy!";
             }
             return null;
@@ -482,17 +431,12 @@
 
         window.cardObserver = new IntersectionObserver((entries) => {
             entries.forEach(entry => {
-                if (entry.isIntersecting) { 
-                    entry.target.classList.add('show'); 
-                } else {
-                    entry.target.classList.remove('show');
-                }
+                if (entry.isIntersecting) { entry.target.classList.add('show'); } 
+                else { entry.target.classList.remove('show'); }
             });
         }, { root: null, rootMargin: '0px 0px -40px 0px', threshold: 0.15 });
 
-        onAuthStateChanged(auth, (user) => {
-            window.currentUser = user;
-        });
+        onAuthStateChanged(auth, (user) => { window.currentUser = user; });
 
         window.setupFeedListener = function() {
             if (unsubscribeFeed) unsubscribeFeed();
@@ -514,16 +458,15 @@
                     data.id = docSnap.id;
 
                     if (data.expiresAt && Date.now() > data.expiresAt) {
-                        console.log("Deleted expired post from database:", data.id);
                         deleteDoc(docSnap.ref).catch(e => console.log("Cleanup background error:", e));
                         return; 
                     }
-
                     fetchedPosts.push(data);
                 });
 
                 window.allPosts = fetchedPosts;
-
+                
+                // Fallback client sort just to maintain UI stability 
                 if (window.currentSort === 'trending') {
                     window.allPosts.sort((a, b) => (b.upvotes || 0) - (a.upvotes || 0));
                 } else {
@@ -554,10 +497,8 @@
 
         window.loadMorePosts = async function() {
             if (isLoadingMore || !hasMorePosts) return;
-            
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
-            if (searchQuery) return; 
-
+            if (searchQuery) return; // Search mode me no pagination
             isLoadingMore = true;
             const indicator = document.getElementById('loadingMoreIndicator');
             if (indicator) indicator.style.display = 'block';
@@ -596,17 +537,16 @@
 
         window.closeLoginPrompt = function() { triggerHaptic(15); document.getElementById('loginPromptModal').style.display = 'none'; };
 
+        // 🛡️ User Profile - Strict XSS Sanitization 🛡️
         window.openProfileModal = function() {
             triggerHaptic(25);
             const user = window.currentUser;
             const detailsDiv = document.getElementById('profileDetails');
             let adminBtnHTML = isUserAdmin() ? `<button onclick="window.openAdminModal()" style="background: var(--primary); color: white; border: none; padding: 6px 16px; border-radius: 9999px; font-size: 0.8rem; cursor: pointer; font-weight: bold; margin-bottom: 12px; display: block; width: 100%;"><i class="fa-solid fa-shield-halved"></i> Open Admin Panel</button>` : '';
-            
             const adminBadge = isUserAdmin() ? ` ${crownSVG}` : '';
 
-            // 🔥 XSS Fix: Properly escaping the user photo to prevent malicious links 🔥
             detailsDiv.innerHTML = `
-                <img src="${escapeHtml(user.photoURL)}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
+                <img src="${sanitizeUrl(user.photoURL)}" style="width: 70px; height: 70px; border-radius: 50%; border: 2px solid var(--primary); margin-bottom: 10px;">
                 <h3 style="margin: 0; color: white; display: flex; align-items: center; justify-content: center; gap: 6px;">${escapeHtml(user.displayName)}${adminBadge}</h3>
                 <p style="margin: 5px 0 15px 0; font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(user.email)}</p>
                 ${adminBtnHTML}
@@ -647,14 +587,10 @@
                 let flaggedPosts = [];
                 snap.forEach(doc => { 
                     let data = doc.data(); 
-                    if(data.isFlagged === true) {
-                        data.id = doc.id; 
-                        flaggedPosts.push(data); 
-                    }
+                    if(data.isFlagged === true) { data.id = doc.id; flaggedPosts.push(data); }
                 });
 
                 listContainer.innerHTML = "";
-                
                 if (flaggedPosts.length === 0) {
                     listContainer.innerHTML = '<p style="text-align: center; color: var(--text-muted); padding: 20px;">No pending reports to review! 🎉</p>';
                     return;
@@ -712,6 +648,7 @@
             window.renderFeed();
         };
 
+        // 🛡️ HTML Rendering with Strict Sanitization 🛡️
         window.renderFeed = function() {
             const openCommentsState = {};
             document.querySelectorAll('.comments-section.show-comments').forEach(el => {
@@ -724,8 +661,7 @@
             feed.innerHTML = "";
             const searchQuery = document.getElementById('searchInput').value.toLowerCase();
             let displayPosts = [...window.allPosts];
-            let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]');
-
+            
             if (displayPosts.length === 0) {
                 feed.innerHTML = '<div style="text-align:center; padding: 20px; color: #9ca3af;">Be the first to confess something!</div>';
                 return;
@@ -751,8 +687,8 @@
                 if(data.comments) {
                     data.comments.forEach(c => {
                         const cName = escapeHtml(c.userName) || "Anonymous Student";
-                        // 🔥 XSS Fix: Properly escaping the comment photo URL
-                        const cAvatar = c.userPhoto ? `<img src="${escapeHtml(c.userPhoto)}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
+                        const safeUserPhoto = sanitizeUrl(c.userPhoto);
+                        const cAvatar = safeUserPhoto ? `<img src="${safeUserPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
                         const cAdminBadge = (c.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
                         const safeCommentText = escapeHtml(c.text);
                         commentsHTML += `
@@ -764,9 +700,10 @@
                     });
                 }
 
-                const imageHTML = data.imageUrl ? `<img src="${data.imageUrl}" class="feed-img" ontouchstart="window.startPinch(event, this)" ontouchmove="window.movePinch(event, this)" ontouchend="window.endPinch(event, this)">` : '';
+                const safeImageBase64 = sanitizeUrl(data.imageUrl);
+                const imageHTML = safeImageBase64 ? `<img src="${safeImageBase64}" class="feed-img" ontouchstart="window.startPinch(event, this)" ontouchmove="window.movePinch(event, this)" ontouchend="window.endPinch(event, this)">` : '';
 
-                const isMyPost = myPosts.includes(data.id) || (window.currentUser && data.uid === window.currentUser.uid);
+                const isMyPost = (window.currentUser && data.uid === window.currentUser.uid);
                 const deleteBtnHTML = (isMyPost || isUserAdmin()) ? `<button class="report-btn" style="color: #ef4444; margin-right: 12px;" onclick="window.deletePost('${data.id}')"><i class="fa-solid fa-trash"></i></button>` : '';
 
                 const isUpvoted = currentUid && data.upvotedBy && data.upvotedBy.includes(currentUid);
@@ -786,8 +723,8 @@
                 const reactions = data.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
                 const userReacted = data.userReactions || {};
                 const authorName = escapeHtml(data.userName) || "Anonymous Panda 🐼";
-                // 🔥 XSS Fix: Properly escaping the main post author photo URL
-                const authorAvatar = data.userPhoto ? `<img src="${escapeHtml(data.userPhoto)}" alt="User">` : '👻';
+                const safeAuthorPhoto = sanitizeUrl(data.userPhoto);
+                const authorAvatar = safeAuthorPhoto ? `<img src="${safeAuthorPhoto}" alt="User">` : '👻';
                 const postAdminBadge = (data.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
 
                 const safeParsedText = escapeHtml(data.text).replace(/(^|\s)(#[a-z\d-_]+)/ig, "$1<span class='hashtag' data-tag='$2' onclick='window.searchHashtag(this.dataset.tag)'>$2</span>");
@@ -845,9 +782,7 @@
                 if (section) {
                     section.classList.add('show-comments');
                     const inputEl = document.getElementById('commentInput-' + id);
-                    if (inputEl && openCommentsState[id]) {
-                        inputEl.value = openCommentsState[id];
-                    }
+                    if (inputEl && openCommentsState[id]) { inputEl.value = openCommentsState[id]; }
                 }
             });
 
@@ -870,18 +805,9 @@
                 const upDiv = statGroup.children[0];
                 const downDiv = statGroup.children[1];
                 const commentCountSpan = statGroup.children[2].querySelector('span');
-
-                if (upDiv) {
-                    upDiv.style.color = isUpvoted ? 'var(--primary)' : 'inherit';
-                    upDiv.querySelector('span').innerText = post.upvotes || 0;
-                }
-                if (downDiv) {
-                    downDiv.style.color = isDownvoted ? 'var(--downvote)' : 'inherit';
-                    downDiv.querySelector('span').innerText = post.downvotes || 0;
-                }
-                if (commentCountSpan) {
-                    commentCountSpan.innerText = post.comments ? post.comments.length : 0;
-                }
+                if (upDiv) { upDiv.style.color = isUpvoted ? 'var(--primary)' : 'inherit'; upDiv.querySelector('span').innerText = post.upvotes || 0; }
+                if (downDiv) { downDiv.style.color = isDownvoted ? 'var(--downvote)' : 'inherit'; downDiv.querySelector('span').innerText = post.downvotes || 0; }
+                if (commentCountSpan) { commentCountSpan.innerText = post.comments ? post.comments.length : 0; }
             }
 
             const reactions = post.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
@@ -890,11 +816,7 @@
                 const pill = document.getElementById(`react-${postId}-${rt}`);
                 if (pill) {
                     pill.querySelector('span').innerText = reactions[rt] || 0;
-                    if (userReactions[currentUid] === rt) {
-                        pill.classList.add('active');
-                    } else {
-                        pill.classList.remove('active');
-                    }
+                    if (userReactions[currentUid] === rt) { pill.classList.add('active'); } else { pill.classList.remove('active'); }
                 }
             });
 
@@ -903,8 +825,8 @@
                 let commentsHTML = "";
                 post.comments.forEach(c => {
                     const cName = escapeHtml(c.userName) || "Anonymous Student";
-                    // 🔥 XSS Fix: Escaping comment photos here too
-                    const cAvatar = c.userPhoto ? `<img src="${escapeHtml(c.userPhoto)}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
+                    const safeUserPhoto = sanitizeUrl(c.userPhoto);
+                    const cAvatar = safeUserPhoto ? `<img src="${safeUserPhoto}" style="width:18px; height:18px; border-radius:50%; object-fit:cover;">` : '👻';
                     const cAdminBadge = (c.email === ADMIN_EMAIL) ? ` ${crownSVG}` : '';
                     const safeCommentText = escapeHtml(c.text);
                     commentsHTML += `
@@ -920,13 +842,9 @@
 
         window.vote = async function(event, postId, voteType) {
             triggerHaptic(25);
-            
             const btnId = voteType === 1 ? `upvote-btn-${postId}` : `downvote-btn-${postId}`;
             const btnEl = document.getElementById(btnId);
-            if (btnEl) {
-                btnEl.classList.add('smooth-scale');
-                setTimeout(() => btnEl.classList.remove('smooth-scale'), 200);
-            }
+            if (btnEl) { btnEl.classList.add('smooth-scale'); setTimeout(() => btnEl.classList.remove('smooth-scale'), 200); }
 
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
@@ -943,60 +861,43 @@
                 if (hasUpvoted) { 
                     post.upvotes = Math.max(0, (post.upvotes || 1) - 1); 
                     post.upvotedBy = post.upvotedBy.filter(id => id !== uid);
-                    updates.upvotes = increment(-1); 
-                    updates.upvotedBy = arrayRemove(uid); 
+                    updates.upvotes = increment(-1); updates.upvotedBy = arrayRemove(uid); 
                 } else { 
                     post.upvotes = (post.upvotes || 0) + 1; 
                     post.upvotedBy.push(uid);
-                    updates.upvotes = increment(1); 
-                    updates.upvotedBy = arrayUnion(uid); 
+                    updates.upvotes = increment(1); updates.upvotedBy = arrayUnion(uid); 
                     if (hasDownvoted) { 
                         post.downvotes = Math.max(0, (post.downvotes || 1) - 1); 
                         post.downvotedBy = post.downvotedBy.filter(id => id !== uid);
-                        updates.downvotes = increment(-1); 
-                        updates.downvotedBy = arrayRemove(uid); 
+                        updates.downvotes = increment(-1); updates.downvotedBy = arrayRemove(uid); 
                     } 
                 }
             } else { 
                 if (hasDownvoted) { 
                     post.downvotes = Math.max(0, (post.downvotes || 1) - 1); 
                     post.downvotedBy = post.downvotedBy.filter(id => id !== uid);
-                    updates.downvotes = increment(-1); 
-                    updates.downvotedBy = arrayRemove(uid); 
+                    updates.downvotes = increment(-1); updates.downvotedBy = arrayRemove(uid); 
                 } else { 
                     post.downvotes = (post.downvotes || 0) + 1; 
                     post.downvotedBy.push(uid);
-                    updates.downvotes = increment(1); 
-                    updates.downvotedBy = arrayUnion(uid); 
+                    updates.downvotes = increment(1); updates.downvotedBy = arrayUnion(uid); 
                     if (hasUpvoted) { 
                         post.upvotes = Math.max(0, (post.upvotes || 1) - 1); 
                         post.upvotedBy = post.upvotedBy.filter(id => id !== uid);
-                        updates.upvotes = increment(-1); 
-                        updates.upvotedBy = arrayRemove(uid); 
+                        updates.upvotes = increment(-1); updates.upvotedBy = arrayRemove(uid); 
                     } 
                 }
             }
-
             updatePostCardDOM(postId);
-
             if (Object.keys(updates).length > 0) {
-                try {
-                    const postRef = doc(db, "confessions", postId);
-                    await updateDoc(postRef, updates);
-                } catch (e) {
-                    console.error("Failed to vote:", e);
-                }
+                try { await updateDoc(doc(db, "confessions", postId), updates); } catch (e) { console.error("Failed to vote:", e); }
             }
         };
 
         window.reactPost = async function(postId, reactionType) {
             triggerHaptic(20);
-
             const pillEl = document.getElementById(`react-${postId}-${reactionType}`);
-            if (pillEl) {
-                pillEl.classList.add('smooth-scale');
-                setTimeout(() => pillEl.classList.remove('smooth-scale'), 200);
-            }
+            if (pillEl) { pillEl.classList.add('smooth-scale'); setTimeout(() => pillEl.classList.remove('smooth-scale'), 200); }
 
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
             const uid = window.currentUser.uid;
@@ -1005,7 +906,6 @@
 
             post.reactions = post.reactions || { lol: 0, relatable: 0, tea: 0, wholesome: 0 };
             post.userReactions = post.userReactions || {};
-
             const prevReaction = post.userReactions[uid];
             
             if (prevReaction === reactionType) {
@@ -1020,24 +920,17 @@
             updatePostCardDOM(postId);
 
             try {
-                const postRef = doc(db, "confessions", postId);
                 let updates = {};
-
                 if (prevReaction === reactionType) {
                     updates[`reactions.${reactionType}`] = increment(-1);
                     updates[`userReactions.${uid}`] = deleteField();
                 } else {
                     updates[`reactions.${reactionType}`] = increment(1);
                     updates[`userReactions.${uid}`] = reactionType;
-                    if (prevReaction) {
-                        updates[`reactions.${prevReaction}`] = increment(-1);
-                    }
+                    if (prevReaction) { updates[`reactions.${prevReaction}`] = increment(-1); }
                 }
-
-                await updateDoc(postRef, updates);
-            } catch (e) {
-                console.error("Failed to react:", e);
-            }
+                await updateDoc(doc(db, "confessions", postId), updates);
+            } catch (e) { console.error("Failed to react:", e); }
         };
 
         window.deletePost = async function(postId) {
@@ -1075,21 +968,18 @@
         window.handleImageSelect = function(event) {
             triggerHaptic(15);
             const file = event.target.files[0];
-            if (!file) {
-                window.removeImage();
-                return;
-            }
+            if (!file) { window.removeImage(); return; }
             const reader = new FileReader();
             reader.onload = function(e) {
                 const img = new Image();
                 img.onload = function() {
                     const canvas = document.createElement('canvas');
-                    const MAX_WIDTH = 1200; const scaleSize = MAX_WIDTH / img.width;
-                    if(img.width > MAX_WIDTH) { canvas.width = MAX_WIDTH; canvas.height = img.height * scaleSize; } 
+                    const scaleSize = IMAGE_MAX_WIDTH / img.width;
+                    if(img.width > IMAGE_MAX_WIDTH) { canvas.width = IMAGE_MAX_WIDTH; canvas.height = img.height * scaleSize; } 
                     else { canvas.width = img.width; canvas.height = img.height; }
                     const ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                     window.currentImageBase64 = canvas.toDataURL('image/jpeg', 0.85); 
-                    if (window.currentImageBase64.length > 950000) { alert("Photo too large (1MB limit)."); window.removeImage(); return; }
+                    if (window.currentImageBase64.length > IMAGE_MAX_SIZE_BYTES) { alert("Photo too large (1MB limit)."); window.removeImage(); return; }
                     document.getElementById('imagePreview').src = window.currentImageBase64;
                     document.getElementById('imagePreviewContainer').style.display = 'block';
                 }
@@ -1105,6 +995,7 @@
             document.getElementById('mediaUpload').value = ""; 
         };
 
+        // 🛡️ TIME-TRAVEL FIX: Uses Server Timestamp (Fix #11) 🛡️
         window.postConfession = async function() {
             triggerHaptic(30);
             if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; }
@@ -1123,15 +1014,13 @@
             
             try {
                 const expiresAtTimestamp = isDisappearing ? Date.now() + (24 * 60 * 60 * 1000) : null;
-                // 🔥 Time-Travel Fix: using serverTimestamp() to ensure strict time verification
                 const docRef = await addDoc(collection(db, "confessions"), {
                     text: text, imageUrl: window.currentImageBase64, upvotes: 0, downvotes: 0, upvotedBy: [], downvotedBy: [], comments: [],
                     reactions: { lol: 0, relatable: 0, tea: 0, wholesome: 0 }, userReactions: {},
                     reports: [], isFlagged: false, expiresAt: expiresAtTimestamp,
-                    timestamp: Date.now(), serverTime: serverTimestamp(),
+                    timestamp: Date.now(), serverTime: serverTimestamp(), // Secure server time
                     uid: window.currentUser.uid, email: window.currentUser.email, userName: window.currentUser.displayName, userPhoto: window.currentUser.photoURL
                 });
-                let myPosts = JSON.parse(localStorage.getItem('myPosts') || '[]'); myPosts.push(docRef.id); localStorage.setItem('myPosts', JSON.stringify(myPosts));
                 input.value = ""; document.getElementById('disappearingToggle').checked = false; window.removeImage(); window.closeModal(); window.createNotification("Confession posted live!", "fa-check");
             } catch (e) { alert("Error posting."); }
             btn.innerHTML = 'Whisper It <i class="fa-regular fa-paper-plane" style="margin-left:5px;"></i>'; btn.disabled = false;
@@ -1164,93 +1053,40 @@
 
         window.sortFeed = function(type) { 
             triggerHaptic(20);
-            document.getElementById('latestBtn').classList.remove('active'); 
-            document.getElementById('trendingBtn').classList.remove('active'); 
+            document.getElementById('latestBtn').classList.remove('active'); document.getElementById('trendingBtn').classList.remove('active'); 
             document.getElementById(type + 'Btn').classList.add('active'); 
-            
-            window.currentSort = type; 
-            window.currentLimit = PAGE_SIZE; // Reset limit on sort change
-            hasMorePosts = true;
-            window.setupFeedListener(); 
+            window.currentSort = type; window.currentLimit = PAGE_SIZE; hasMorePosts = true; window.setupFeedListener(); 
         };
 
         window.searchPosts = function() { 
             const searchInput = document.getElementById('searchInput').value.trim().toLowerCase();
-            
-            if (searchInput.length > 0 && window.currentLimit !== 100) {
-                window.currentLimit = 100; // Bump limit for deep search
-                window.setupFeedListener();
-            } else if (searchInput.length === 0 && window.currentLimit === 100) {
-                window.currentLimit = PAGE_SIZE; // Reset limit when search cleared
-                window.setupFeedListener();
-            } else {
-                window.renderFeed(); 
-            }
+            if (searchInput.length > 0 && window.currentLimit !== 100) { window.currentLimit = 100; window.setupFeedListener(); } 
+            else if (searchInput.length === 0 && window.currentLimit === 100) { window.currentLimit = PAGE_SIZE; window.setupFeedListener(); } 
+            else { window.renderFeed(); }
         };
 
-        window.searchHashtag = function(tag) { 
-            document.getElementById('searchContainer').style.display = 'block'; 
-            document.getElementById('searchInput').value = tag; 
-            window.scrollToTop(); 
-            window.searchPosts(); 
-        };
-
+        window.searchHashtag = function(tag) { document.getElementById('searchContainer').style.display = 'block'; document.getElementById('searchInput').value = tag; window.scrollToTop(); window.searchPosts(); };
         window.toggleSearch = function() { 
             triggerHaptic(20);
             const searchContainer = document.getElementById('searchContainer'); 
-            if (searchContainer.style.display === 'block') { 
-                searchContainer.style.display = 'none'; 
-                document.getElementById('searchInput').value = ''; 
-                window.currentLimit = PAGE_SIZE; // Reset
-                window.setupFeedListener(); 
-            } 
-            else { 
-                searchContainer.style.display = 'block'; 
-                document.getElementById('searchInput').focus(); 
-                window.scrollToTop(); 
-            } 
+            if (searchContainer.style.display === 'block') { searchContainer.style.display = 'none'; document.getElementById('searchInput').value = ''; window.currentLimit = PAGE_SIZE; window.setupFeedListener(); } 
+            else { searchContainer.style.display = 'block'; document.getElementById('searchInput').focus(); window.scrollToTop(); } 
         };
 
-        window.openModal = function() { 
-            triggerHaptic(25);
-            if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; } 
-            document.getElementById('postModal').style.display = 'flex'; 
-            document.getElementById('confessionInput').focus(); 
-        };
+        window.openModal = function() { triggerHaptic(25); if (!window.currentUser) { document.getElementById('loginPromptModal').style.display = 'flex'; return; } document.getElementById('postModal').style.display = 'flex'; document.getElementById('confessionInput').focus(); };
         window.closeModal = function() { triggerHaptic(15); document.getElementById('postModal').style.display = 'none'; window.removeImage(); };
         window.scrollToTop = function() { window.scrollTo({ top: 0, behavior: 'smooth' }); };
-        window.toggleNotifications = function() { 
-            triggerHaptic(20);
-            const dropdown = document.getElementById('notifDropdown'); const badge = document.getElementById('notifBadge'); 
-            if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } 
-            else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } 
-        };
+        window.toggleNotifications = function() { triggerHaptic(20); const dropdown = document.getElementById('notifDropdown'); const badge = document.getElementById('notifBadge'); if (dropdown.style.display === 'block') { dropdown.style.display = 'none'; } else { dropdown.style.display = 'block'; unreadNotifications = 0; badge.style.display = 'none'; } };
         window.createNotification = function(message, iconName) { const list = document.getElementById('notifList'); const emptyMsg = document.getElementById('emptyNotif'); const badge = document.getElementById('notifBadge'); if (emptyMsg) emptyMsg.remove(); list.insertAdjacentHTML('afterbegin', `<div class="notif-item"><i class="fa-solid ${iconName}"></i> ${message}</div>`); unreadNotifications++; badge.innerText = unreadNotifications; badge.style.display = 'flex'; };
         
-        window.toggleComments = function(postId) { 
-            triggerHaptic(15);
-            const section = document.getElementById('comments-' + postId); 
-            if (section.classList.contains('show-comments')) {
-                section.classList.remove('show-comments');
-            } else {
-                section.classList.add('show-comments');
-            }
-        };
-        
-        window.shareToWhatsApp = function(encodedText) { 
-            triggerHaptic(25);
-            const decoded = decodeURIComponent(encodedText);
-            const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decoded}"\n\nDownload the app to reply!`; 
-            window.location.href = `whatsapp://send?text=${encodeURIComponent(shareText)}`; 
-        };
-
+        window.toggleComments = function(postId) { triggerHaptic(15); const section = document.getElementById('comments-' + postId); if (section.classList.contains('show-comments')) { section.classList.remove('show-comments'); } else { section.classList.add('show-comments'); } };
+        window.shareToWhatsApp = function(encodedText) { triggerHaptic(25); const decoded = decodeURIComponent(encodedText); const shareText = `Check out this confession on Osgu Campus Confession: \n\n"${decoded}"\n\nDownload the app to reply!`; window.location.href = `whatsapp://send?text=${encodeURIComponent(shareText)}`; };
         window.reportPost = function(id) { triggerHaptic(20); postToReport = id; document.getElementById('reportModal').style.display = 'flex'; };
         window.closeReportModal = function() { triggerHaptic(15); document.getElementById('reportModal').style.display = 'none'; postToReport = null; };
         
         window.submitReport = async function() { 
             triggerHaptic(30);
-            const reasons = document.getElementsByName('reportReason'); 
-            let selectedReason = ""; 
+            const reasons = document.getElementsByName('reportReason'); let selectedReason = ""; 
             for(let i=0; i<reasons.length; i++) { if(reasons[i].checked) { selectedReason = reasons[i].value; reasons[i].checked = false; break; } } 
             if(!selectedReason) { window.createNotification("Select a reason first", "fa-circle-exclamation"); return; } 
             
@@ -1261,16 +1097,8 @@
                     const post = window.allPosts.find(p => p.id === postToReport);
                     const existingReports = post && post.reports ? post.reports : [];
                     
-                    if (existingReports.some(r => r.uid === window.currentUser.uid)) {
-                        window.createNotification("You have already reported this post.", "fa-circle-exclamation");
-                        window.closeReportModal();
-                        return;
-                    }
-
-                    await updateDoc(postRef, {
-                        reports: arrayUnion({ uid: window.currentUser.uid, email: window.currentUser.email, reason: selectedReason, timestamp: Date.now() }),
-                        isFlagged: true
-                    });
+                    if (existingReports.some(r => r.uid === window.currentUser.uid)) { window.createNotification("You have already reported this post.", "fa-circle-exclamation"); window.closeReportModal(); return; }
+                    await updateDoc(postRef, { reports: arrayUnion({ uid: window.currentUser.uid, email: window.currentUser.email, reason: selectedReason, timestamp: Date.now() }), isFlagged: true });
                     window.createNotification("Report submitted successfully.", "fa-shield-halved");
                 } catch (error) { alert("Failed to report."); }
             }
@@ -1285,17 +1113,19 @@
             if (window.scrollY === 0 && !isRefreshing) { ptrStartY = e.touches[0].clientY; isPulling = true; ptrContainer.style.transition = 'none'; }
         }, {passive: true});
 
+        // 🛡️ SCROLL FIX: passive false allowed for touchmove (Fix #16) 🛡️
         document.body.addEventListener('touchmove', (e) => {
             if (!isPulling || isRefreshing) return;
             ptrCurrentY = e.touches[0].clientY;
             let pullDistance = ptrCurrentY - ptrStartY;
             if (pullDistance > 0 && window.scrollY === 0) {
+                if (e.cancelable) e.preventDefault(); // Safe to call now
                 let visualDistance = pullDistance * 0.35; 
                 if (visualDistance > 55) visualDistance = 55 + (visualDistance - 55) * 0.2; 
                 ptrContainer.style.transform = `translateX(-50%) translateY(${visualDistance}px)`;
                 ptrIcon.style.transform = `rotate(${visualDistance * 4}deg)`;
             }
-        }, {passive: true});
+        }, {passive: false});
 
         document.body.addEventListener('touchend', () => {
             if (!isPulling || isRefreshing) return;
